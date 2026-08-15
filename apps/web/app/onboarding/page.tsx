@@ -6,8 +6,7 @@ import { createTrackedItem } from "@/lib/api";
 import type { BookSearchResult } from "@/lib/types";
 import { INTEREST_PRESETS } from "@/lib/interestPresets";
 import { BookSearch } from "@/app/BookSearch";
-
-const ONBOARDED_KEY = "yomitore:onboarded";
+import { markOnboarded } from "@/lib/onboarding";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -40,7 +39,7 @@ export default function OnboardingPage() {
   }
 
   function finishOnboarding() {
-    localStorage.setItem(ONBOARDED_KEY, "1");
+    markOnboarded();
     router.push("/");
   }
 

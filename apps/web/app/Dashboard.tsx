@@ -38,8 +38,19 @@ export function Dashboard() {
 
   return (
     <main>
-      <h1>ヨミトレ</h1>
-      <p className="subtitle">気になる本・興味分野を登録して、話題を探す</p>
+      <header className="dash-header">
+        <div>
+          <h1>
+            <Link href="/welcome" className="brand-link">
+              <span aria-hidden>📚</span> ヨミトレ
+            </Link>
+          </h1>
+          <p className="subtitle">気になる本・興味分野を登録して、話題を探す</p>
+        </div>
+        <Link href="/welcome" className="pill-link">
+          タイトル画面へ
+        </Link>
+      </header>
 
       <AddTrackedItemSection
         existingExternalIds={existingExternalIds}
