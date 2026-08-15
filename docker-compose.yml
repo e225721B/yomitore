@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yomitore
+      POSTGRES_PASSWORD: yomitore
+      POSTGRES_DB: yomitore
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yomitore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ローカル用 SQS 互換キュー（本番では Amazon SQS を使用）
+  sqs:
+    image: softwaremill/elasticmq-native:1.5.7
+    restart: unless-stopped
+    ports:
+      - "9324:9324"
+      - "9325:9325"
+    volumes:
+      - ./infra/local/elasticmq/custom.conf:/opt/elasticmq.conf
+
+volumes:
+  postgres_data:

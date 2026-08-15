@@ -1,0 +1,24 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+.env
+.env.*
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+apps/web/.claude/settings.local.json
+*.egg-info/
+.claude/settings.local.json
+*.tsbuildinfo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log

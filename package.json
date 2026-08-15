@@ -1,0 +1,9 @@
+{
+  "name": "yomitore",
+  "private": true,
+  "packageManager": "pnpm@11.13.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @yomitore/api dev",
+    "dev:web": "pnpm --filter @yomitore/web dev"
+  }
+}
