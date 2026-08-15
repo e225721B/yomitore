@@ -3,7 +3,8 @@
   "private": true,
   "packageManager": "pnpm@11.13.0",
   "scripts": {
-    "dev:api": "pnpm --filter @yomitore/api dev",
-    "dev:web": "pnpm --filter @yomitore/web dev"
+    "dev:api": "node scripts/dev-guard.mjs 4000 && pnpm --filter @yomitore/api dev",
+    "dev:web": "node scripts/dev-guard.mjs 3000 && pnpm --filter @yomitore/web dev",
+    "dev:stop": "node scripts/dev-guard.mjs --kill 3000 4000"
   }
 }
