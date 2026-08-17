@@ -1,4 +1,13 @@
-import type { BookSearchResult, MatchedContent, TrackedItem, TrackedItemType, Trends } from "./types";
+import type {
+  BookSearchResult,
+  BookStatus,
+  FeedCategory,
+  MatchedContent,
+  TrackedCategory,
+  TrackedItem,
+  TrackedItemType,
+  Trends,
+} from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -10,8 +19,17 @@ export class ApiError extends Error {
   }
 }
 
-export async function fetchTrackedItems(): Promise<TrackedItem[]> {
-  const res = await fetch(`${API_URL}/tracked-items`, { cache: "no-store" });
+function withParams(path: string, params: Record<string, string | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) query.set(key, value);
+  }
+  const qs = query.toString();
+  return `${API_URL}${path}${qs ? `?${qs}` : ""}`;
+}
+
+export async function fetchTrackedItems(category?: TrackedCategory): Promise<TrackedItem[]> {
+  const res = await fetch(withParams("/tracked-items", { category }), { cache: "no-store" });
   if (!res.ok) throw new ApiError("追跡対象の取得に失敗しました", res.status);
   return res.json();
 }
@@ -29,6 +47,7 @@ export async function createTrackedItem(input: {
   author?: string;
   thumbnailUrl?: string;
   externalId?: string;
+  bookStatus?: BookStatus;
 }): Promise<TrackedItem> {
   const res = await fetch(`${API_URL}/tracked-items`, {
     method: "POST",
@@ -39,6 +58,20 @@ export async function createTrackedItem(input: {
     throw new ApiError("この本はすでに登録されています", 409);
   }
   if (!res.ok) throw new ApiError("追跡対象の登録に失敗しました", res.status);
+  return res.json();
+}
+
+/** 読書状態の変更（「気になる本」⇄「読み終わった本」の移動） */
+export async function updateTrackedItem(
+  id: string,
+  input: { bookStatus?: BookStatus; note?: string | null }
+): Promise<TrackedItem> {
+  const res = await fetch(`${API_URL}/tracked-items/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new ApiError("更新に失敗しました", res.status);
   return res.json();
 }
 
@@ -57,17 +90,20 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   return res.json();
 }
 
-export async function fetchMatches(trackedItemId?: string): Promise<MatchedContent[]> {
-  const url = trackedItemId
-    ? `${API_URL}/matches?trackedItemId=${encodeURIComponent(trackedItemId)}`
-    : `${API_URL}/matches`;
-  const res = await fetch(url, { cache: "no-store" });
+export async function fetchMatches(options: {
+  trackedItemId?: string;
+  category?: FeedCategory;
+} = {}): Promise<MatchedContent[]> {
+  const res = await fetch(
+    withParams("/matches", { trackedItemId: options.trackedItemId, category: options.category }),
+    { cache: "no-store" }
+  );
   if (!res.ok) throw new ApiError("新着コンテンツの取得に失敗しました", res.status);
   return res.json();
 }
 
-export async function fetchTrends(): Promise<Trends> {
-  const res = await fetch(`${API_URL}/trends`, { cache: "no-store" });
+export async function fetchTrends(category?: FeedCategory): Promise<Trends> {
+  const res = await fetch(withParams("/trends", { category }), { cache: "no-store" });
   if (!res.ok) throw new ApiError("トレンドの取得に失敗しました", res.status);
   return res.json();
 }

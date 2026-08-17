@@ -2,23 +2,25 @@
 
 import { useState } from "react";
 import { createTrackedItem } from "@/lib/api";
-import type { BookSearchResult, TrackedItem } from "@/lib/types";
+import type { BookSearchResult, TrackedCategory, TrackedItem } from "@/lib/types";
 import { BookSearch } from "./BookSearch";
 import { INTEREST_PRESETS } from "@/lib/interestPresets";
+import { CATEGORY_META, creationParamsFor } from "@/lib/categories";
 
 type Props = {
+  category: TrackedCategory;
   existingExternalIds: string[];
   onAdded: (item: TrackedItem) => void;
 };
 
-export function AddTrackedItemSection({ existingExternalIds, onAdded }: Props) {
-  const [tab, setTab] = useState<"book" | "interest">("book");
+export function AddTrackedItemSection({ category, existingExternalIds, onAdded }: Props) {
   const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [interestTitle, setInterestTitle] = useState("");
+
+  const meta = CATEGORY_META[category];
 
   async function handleRegisterBook() {
     if (!selectedBook) return;
@@ -26,7 +28,7 @@ export function AddTrackedItemSection({ existingExternalIds, onAdded }: Props) {
     setError(null);
     try {
       const created = await createTrackedItem({
-        type: "BOOK",
+        ...creationParamsFor(category),
         title: selectedBook.title,
         author: selectedBook.authors.join(", ") || undefined,
         thumbnailUrl: selectedBook.thumbnailUrl ?? undefined,
@@ -48,7 +50,7 @@ export function AddTrackedItemSection({ existingExternalIds, onAdded }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const created = await createTrackedItem({ type: "INTEREST", title: title.trim() });
+      const created = await createTrackedItem({ ...creationParamsFor(category), title: title.trim() });
       onAdded(created);
       setInterestTitle("");
     } catch (e) {
@@ -60,61 +62,7 @@ export function AddTrackedItemSection({ existingExternalIds, onAdded }: Props) {
 
   return (
     <section className="add-section">
-      <div className="tabs">
-        <button
-          type="button"
-          className={tab === "book" ? "tab tab-active" : "tab"}
-          onClick={() => setTab("book")}
-        >
-          本を検索して追加
-        </button>
-        <button
-          type="button"
-          className={tab === "interest" ? "tab tab-active" : "tab"}
-          onClick={() => setTab("interest")}
-        >
-          興味分野を追加
-        </button>
-      </div>
-
-      {tab === "book" ? (
-        <div className="add-book-panel">
-          {!selectedBook ? (
-            <BookSearch onSelect={setSelectedBook} disabledExternalIds={existingExternalIds} />
-          ) : (
-            <div className="book-confirm">
-              <div className="book-result">
-                {selectedBook.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="book-thumb" src={selectedBook.thumbnailUrl} alt="" />
-                ) : (
-                  <div className="book-thumb book-thumb-placeholder" aria-hidden />
-                )}
-                <div className="book-info">
-                  <span className="book-title">{selectedBook.title}</span>
-                  {selectedBook.authors.length > 0 && (
-                    <span className="book-author">{selectedBook.authors.join(", ")}</span>
-                  )}
-                </div>
-              </div>
-              <textarea
-                placeholder="メモ（任意）"
-                rows={2}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <div className="confirm-actions">
-                <button type="button" onClick={handleRegisterBook} disabled={submitting}>
-                  {submitting ? "登録中..." : "この本を登録する"}
-                </button>
-                <button type="button" className="secondary-btn" onClick={() => setSelectedBook(null)}>
-                  検索に戻る
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
+      {category === "INTEREST" ? (
         <div className="add-interest-panel">
           <div className="chip-list">
             {INTEREST_PRESETS.map((preset) => (
@@ -149,6 +97,43 @@ export function AddTrackedItemSection({ existingExternalIds, onAdded }: Props) {
               追加
             </button>
           </div>
+        </div>
+      ) : (
+        <div className="add-book-panel">
+          {!selectedBook ? (
+            <BookSearch onSelect={setSelectedBook} disabledExternalIds={existingExternalIds} />
+          ) : (
+            <div className="book-confirm">
+              <div className="book-result">
+                {selectedBook.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="book-thumb" src={selectedBook.thumbnailUrl} alt="" />
+                ) : (
+                  <div className="book-thumb book-thumb-placeholder" aria-hidden />
+                )}
+                <div className="book-info">
+                  <span className="book-title">{selectedBook.title}</span>
+                  {selectedBook.authors.length > 0 && (
+                    <span className="book-author">{selectedBook.authors.join(", ")}</span>
+                  )}
+                </div>
+              </div>
+              <textarea
+                placeholder={category === "FINISHED" ? "感想・メモ（任意）" : "メモ（任意）"}
+                rows={2}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <div className="confirm-actions">
+                <button type="button" onClick={handleRegisterBook} disabled={submitting}>
+                  {submitting ? "登録中..." : `${meta.listHeading}に登録する`}
+                </button>
+                <button type="button" className="secondary-btn" onClick={() => setSelectedBook(null)}>
+                  検索に戻る
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {error && <p className="error">{error}</p>}

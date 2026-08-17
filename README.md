@@ -64,6 +64,8 @@ set -a; source .env; set +a
 
 収集ワーカーは、追跡対象（本・興味分野）ごとに `title` をクエリとして YouTube を検索し、動画メタデータを `Content` テーブルに保存する（`source` + `sourceId` で重複排除）。新規保存した Content は SQS の `collection-queue` に `{ contentId, source, sourceId }` として投入される。
 
+加えて、追跡対象によらないホットトピック（`HOT_TOPICS` 環境変数、カンマ区切り。未設定なら `yomitore_worker/hot_topics.py` の既定値）でも収集し、そのキーワードを `Content.topic` に記録する。ユーザーがすでに登録している分野と重なるトピックは収集前に除外される。これが「その他（今、熱い分野）」タブの供給源になる。
+
 ### マッチワーカー（Python, M3: 埋め込み生成 → pgvectorで意味マッチング）
 
 ```bash
@@ -79,7 +81,18 @@ set -a; source .env; set +a
 
 ### 新着一覧（M4）
 
-Web の「新着」セクション（`http://localhost:3000`）が API の `GET /matches` を呼び、`Match` テーブルに保存済みのコンテンツをサムネイル・マッチした追跡対象（スコア%付き）とともに `collectedAt` 降順で表示する。収集ワーカー・マッチワーカーを実行した後に画面をリロードすると新着が反映される。
+Web のダッシュボード（`http://localhost:3000`）は 4 つのカテゴリタブに分かれており、それぞれが API の `GET /matches?category=...` を呼んで、そのカテゴリの「トレンドの新着」を表示する。
+
+| タブ | `category` | 中身 |
+|---|---|---|
+| 興味分野 | `INTEREST` | `TrackedItem.type = INTEREST` にマッチしたコンテンツ |
+| 読んだ本 | `FINISHED` | `type = BOOK` かつ `bookStatus = FINISHED` にマッチしたコンテンツ |
+| 気になる本 | `WANT` | `type = BOOK` かつ `bookStatus = WANT` にマッチしたコンテンツ |
+| その他 | `OTHER` | `topic` を持ち、どの追跡対象にもマッチしなかったコンテンツ（＝登録外の熱い分野） |
+
+本の読書状態（`bookStatus`）は一覧・詳細画面の「読み終わった」ボタン（`PATCH /tracked-items/:id`）で切り替えられ、切り替えるとその本と関連コンテンツがタブ間を移動する。
+
+並び順は単なる `collectedAt` 降順ではなく、直近 `TREND_WINDOW_DAYS` 以内のコンテンツを対象に「関連する追跡対象の一致度の合計 × 新しさの係数（集計期間の端で 0.5 まで減衰）」で降順に並べる。期間内に 1 件もない場合は期間の制限を外して補う。
 
 ### トレンド集計ワーカー（Python, M5: DB集計 → Redisキャッシュ）
 
@@ -91,17 +104,20 @@ set -a; source .env; set +a
 
 追跡対象ごとに、直近 `TREND_WINDOW_DAYS`（デフォルト7日）以内に収集された `Match` 件数を集計し、Redisキー `trends:latest` にJSONで保存する。仕様通り、**API（`GET /trends`）はこのキャッシュを読むだけでDBには一切アクセスしない**ため高速に応答する。Webの「トレンド」セクションが件数の多い順にランキング表示する。
 
+集計結果は 2 本立てで、`items` が追跡対象のランキング（`category` 付き。API はこれをタブごとに絞り込む）、`topics` が「その他」タブ用の、どの追跡対象にもマッチしなかったホットトピックのランキング。
+
 > ローカルでは手動実行だが、本番では収集ワーカー・マッチワーカーと同様に定期実行（CronJob）される想定。
 
 ## API
 
 | メソッド | パス | 概要 |
 |---|---|---|
-| GET | /tracked-items | 追跡対象の一覧取得 |
-| POST | /tracked-items | 追跡対象の登録（`type`: `BOOK` \| `INTEREST`, `title`, `note?`） |
+| GET | /tracked-items | 追跡対象の一覧取得（`category`: `INTEREST` \| `FINISHED` \| `WANT` で絞り込み可） |
+| POST | /tracked-items | 追跡対象の登録（`type`: `BOOK` \| `INTEREST`, `title`, `note?`, `bookStatus?`: `WANT` \| `FINISHED`。本で省略時は `WANT`） |
+| PATCH | /tracked-items/:id | 読書状態・メモの更新（`bookStatus`, `note`） |
 | DELETE | /tracked-items/:id | 追跡対象の削除 |
-| GET | /matches | マッチ済み新着コンテンツの一覧（各コンテンツに紐づく追跡対象とスコアを含む、`collectedAt`降順、最大50件） |
-| GET | /trends | トレンドランキング（Redisキャッシュのみ参照、DBアクセスなし） |
+| GET | /matches | カテゴリごとのトレンド新着（`category` または `trackedItemId` で絞り込み、最大50件） |
+| GET | /trends | トレンドランキング（`category` で絞り込み。Redisキャッシュのみ参照、DBアクセスなし） |
 
 ## インフラ（AWS / Terraform）
 
