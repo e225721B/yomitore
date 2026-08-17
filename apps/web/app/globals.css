@@ -34,6 +34,19 @@
 
   --danger: #b4402c;
 
+  /* カテゴリ色。タブ・バッジ・見出しのアクセントを
+     data-category から --cat / --cat-tint に流し込んで使う。 */
+  --cat-interest: #1b3a5c; /* 興味分野 — インクブルー */
+  --cat-interest-tint: rgba(27, 58, 92, 0.1);
+  --cat-finished: #2f6b4f; /* 読み終わった本 — 深いグリーン */
+  --cat-finished-tint: rgba(47, 107, 79, 0.1);
+  --cat-want: #c2603f; /* 気になる本 — テラコッタ */
+  --cat-want-tint: rgba(194, 96, 63, 0.1);
+  --cat-other: #6b4a86; /* 今、熱い分野 — プラム */
+  --cat-other-tint: rgba(107, 74, 134, 0.1);
+  /* カテゴリ色の上に乗せる文字色 */
+  --cat-fg: #ffffff;
+
   /* タイトル画面の背景光。アクセント色をそのままぼかすと
      クリーム地の上で灰色に濁るので、明るめの専用色を使う。 */
   --orb-a: #7ea6cc;
@@ -81,6 +94,17 @@
     --sub-tint: rgba(229, 149, 112, 0.14);
 
     --danger: #e8836b;
+
+    /* 暗い地の上では、彩度を保ったまま明るい側に振る */
+    --cat-interest: #8fbde4;
+    --cat-interest-tint: rgba(143, 189, 228, 0.14);
+    --cat-finished: #86c9a4;
+    --cat-finished-tint: rgba(134, 201, 164, 0.14);
+    --cat-want: #e59570;
+    --cat-want-tint: rgba(229, 149, 112, 0.14);
+    --cat-other: #c1a4e0;
+    --cat-other-tint: rgba(193, 164, 224, 0.16);
+    --cat-fg: #16130f;
 
     --orb-a: #3f7dad;
     --orb-a-opacity: 0.4;
@@ -807,44 +831,209 @@ li:hover .tracked-link {
   margin-bottom: 2rem;
 }
 
-.tabs {
+/* ---------- カテゴリタブ ---------- */
+
+/* 色は data-category から流し込む。タブ・パネル・詳細画面で同じ仕組みを使う。 */
+[data-category="INTEREST"] {
+  --cat: var(--cat-interest);
+  --cat-tint: var(--cat-interest-tint);
+}
+
+[data-category="FINISHED"] {
+  --cat: var(--cat-finished);
+  --cat-tint: var(--cat-finished-tint);
+}
+
+[data-category="WANT"] {
+  --cat: var(--cat-want);
+  --cat-tint: var(--cat-want-tint);
+}
+
+[data-category="OTHER"] {
+  --cat: var(--cat-other);
+  --cat-tint: var(--cat-other-tint);
+}
+
+.category-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.category-tab {
   display: flex;
-  gap: 0.35rem;
-  padding: 0.3rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  margin-bottom: 1rem;
-  width: fit-content;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.tab {
-  background: transparent;
-  color: var(--muted);
-  border: none;
-  border-radius: 999px;
-  padding: 0.45rem 1.1rem;
-  font-size: 0.88rem;
-  font-weight: 500;
-  white-space: nowrap;
-  box-shadow: none;
-}
-
-.tab:hover:not(:disabled) {
-  background: transparent;
-  color: var(--fg);
-  transform: none;
-  box-shadow: none;
-}
-
-.tab-active,
-.tab-active:hover:not(:disabled) {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.7rem 0.5rem;
   background: var(--surface);
-  color: var(--fg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.85rem;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 非選択でも、上端の細いバーでどの色のタブかが分かるようにする */
+.category-tab::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--cat);
+  opacity: 0.55;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.category-tab:hover:not(:disabled) {
+  background: var(--cat-tint);
+  color: var(--cat);
+  border-color: var(--cat);
+}
+
+.category-tab:hover::before {
+  opacity: 1;
+}
+
+.category-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--cat-tint), var(--shadow-sm);
+}
+
+.category-tab-active,
+.category-tab-active:hover:not(:disabled) {
+  background: var(--cat);
+  color: var(--cat-fg);
+  border-color: var(--cat);
+  box-shadow: var(--shadow-md);
+}
+
+.category-tab-active::before {
+  opacity: 0;
+}
+
+.category-tab-emoji {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.category-tab-label {
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.category-tab-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--cat-tint);
+  color: var(--cat);
+}
+
+.category-tab-active .category-tab-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--cat-fg);
+}
+
+/* ---------- カテゴリごとのパネル ---------- */
+
+/* パネル内のアクセント（見出しバー・バッジ・ランク）はカテゴリ色に従う */
+.category-panel h2::before {
+  background: var(--cat);
+}
+
+.category-panel .match-badge {
+  background: var(--cat-tint);
+  color: var(--cat);
+}
+
+.category-panel .trend-item:nth-child(-n + 3) .trend-rank {
+  background: var(--cat);
+  color: var(--cat-fg);
+}
+
+.category-panel .refresh-btn {
+  color: var(--cat);
+}
+
+.category-panel .refresh-btn:hover:not(:disabled) {
+  background: var(--cat-tint);
+  border-color: var(--cat);
+}
+
+.category-intro {
+  padding: 1rem 1.15rem;
+  background: var(--cat-tint);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--cat);
+  border-radius: var(--r-md);
+  margin-bottom: 1.5rem;
+}
+
+/* 見出しの左バーはパネルの縁取りと重複するので、ここでは消す */
+.category-heading {
+  margin: 0;
+  padding-left: 0;
+  color: var(--cat);
+}
+
+.category-heading::before {
+  display: none;
+}
+
+.category-desc {
+  color: var(--fg-soft);
+  font-size: 0.86rem;
+  margin: 0.25rem 0 0;
+}
+
+.category-badge {
+  background: var(--cat-tint);
+  border-color: transparent;
+  color: var(--cat);
+}
+
+.tracked-section {
+  margin-top: 2rem;
+}
+
+/* ---------- 一覧の操作ボタン ---------- */
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.status-btn {
+  background: transparent;
+  color: var(--cat, var(--accent));
+  border-color: transparent;
+  box-shadow: none;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  white-space: nowrap;
+}
+
+.status-btn:hover:not(:disabled) {
+  background: var(--cat-tint, var(--accent-tint));
+  color: var(--cat, var(--accent));
+  box-shadow: none;
+  transform: none;
+}
+
+.item-actions .delete-btn {
+  margin-left: 0;
 }
 
 .book-search,
@@ -1011,32 +1200,41 @@ li:hover .tracked-link {
 /* 各ブロックを少しずつ遅らせて立ち上げる */
 /* fill-mode は backwards。both だと終了後も transform: none が残り、
    ホバー時の浮き上がりを打ち消してしまう。 */
+/* カテゴリパネルは key で作り直されるので、タブを切り替えるたびに
+   中身が順に立ち上がる。 */
 main > *,
+.category-panel > *,
 .title-screen > *:not(.title-orb) {
   animation: rise 520ms var(--ease-out) backwards;
 }
 
 main > *:nth-child(1),
+.category-panel > *:nth-child(1),
 .title-screen > *:nth-child(1) {
   animation-delay: 0ms;
 }
 main > *:nth-child(2),
+.category-panel > *:nth-child(2),
 .title-screen > *:nth-child(2) {
   animation-delay: 60ms;
 }
 main > *:nth-child(3),
+.category-panel > *:nth-child(3),
 .title-screen > *:nth-child(3) {
   animation-delay: 120ms;
 }
 main > *:nth-child(4),
+.category-panel > *:nth-child(4),
 .title-screen > *:nth-child(4) {
   animation-delay: 180ms;
 }
 main > *:nth-child(5),
+.category-panel > *:nth-child(5),
 .title-screen > *:nth-child(5) {
   animation-delay: 240ms;
 }
 main > *:nth-child(n + 6),
+.category-panel > *:nth-child(n + 6),
 .title-screen > *:nth-child(n + 6) {
   animation-delay: 300ms;
 }
@@ -1099,6 +1297,20 @@ li:nth-child(n + 6) {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.85rem;
+  }
+
+  /* 4つ横並びだとラベルが潰れるので 2×2 に折り返す */
+  .category-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  li {
+    flex-wrap: wrap;
+  }
+
+  .item-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .feed-item {

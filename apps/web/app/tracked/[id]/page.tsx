@@ -3,14 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { deleteTrackedItem, fetchTrackedItem } from "@/lib/api";
-import type { TrackedItem, TrackedItemType } from "@/lib/types";
+import { deleteTrackedItem, fetchTrackedItem, updateTrackedItem } from "@/lib/api";
+import type { TrackedItem } from "@/lib/types";
+import { CATEGORY_META } from "@/lib/categories";
 import { ContentFeed } from "@/app/ContentFeed";
-
-const TYPE_LABEL: Record<TrackedItemType, string> = {
-  BOOK: "本",
-  INTEREST: "興味分野",
-};
 
 export default function TrackedItemDetailPage() {
   const params = useParams<{ id: string }>();
@@ -34,6 +30,16 @@ export default function TrackedItemDetailPage() {
     router.push("/");
   }
 
+  async function handleToggleStatus() {
+    if (!item) return;
+    const next = item.bookStatus === "FINISHED" ? "WANT" : "FINISHED";
+    try {
+      setItem(await updateTrackedItem(item.id, { bookStatus: next }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "更新に失敗しました");
+    }
+  }
+
   return (
     <main>
       <Link href="/" className="back-link">
@@ -44,7 +50,7 @@ export default function TrackedItemDetailPage() {
       {error && <p className="error">{error}</p>}
 
       {item && (
-        <>
+        <div className="category-panel" data-category={item.category}>
           <div className="detail-header">
             {item.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -53,18 +59,27 @@ export default function TrackedItemDetailPage() {
               <div className="detail-thumb detail-thumb-placeholder" aria-hidden />
             )}
             <div className="detail-info">
-              <span className="badge">{TYPE_LABEL[item.type]}</span>
+              <span className="badge category-badge">
+                {CATEGORY_META[item.category].emoji} {CATEGORY_META[item.category].heading}
+              </span>
               <h1>{item.title}</h1>
               {item.author && <p className="detail-author">{item.author}</p>}
               {item.note && <p className="item-note">{item.note}</p>}
             </div>
-            <button className="delete-btn" onClick={handleDelete}>
-              削除
-            </button>
+            <div className="item-actions">
+              {item.type === "BOOK" && (
+                <button type="button" className="status-btn" onClick={handleToggleStatus}>
+                  {item.bookStatus === "FINISHED" ? "気になるに戻す" : "読み終わった"}
+                </button>
+              )}
+              <button className="delete-btn" onClick={handleDelete}>
+                削除
+              </button>
+            </div>
           </div>
 
           <ContentFeed trackedItemId={item.id} heading="関連する新着コンテンツ" />
-        </>
+        </div>
       )}
     </main>
   );

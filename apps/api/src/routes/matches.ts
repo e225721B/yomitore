@@ -1,52 +1,114 @@
 import type { FastifyInstance } from "fastify";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
+import { categoryOf, feedCategorySchema, trackedItemWhere, type FeedCategory } from "../categories.js";
 
 const queryFilterSchema = z.object({
   trackedItemId: z.string().trim().min(1).optional(),
+  category: feedCategorySchema.optional(),
 });
 
+const TREND_WINDOW_DAYS = Number(process.env.TREND_WINDOW_DAYS ?? 7);
+const TAKE = 50;
+
+type ContentWithMatches = Prisma.ContentGetPayload<{
+  include: { matches: { include: { trackedItem: true } } };
+}>;
+
+function windowStart(): Date {
+  return new Date(Date.now() - TREND_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * 「その内容がどれだけ盛り上がっているか」の簡易スコア。
+ * 関連する追跡対象の一致度の合計に、新しいものほど有利になる係数を掛ける。
+ * 係数は集計期間の端で 0.5 まで落ちるので、古くて強い話題より新着が上に来やすい。
+ */
+function hotScore(content: ContentWithMatches, matches: { score: number }[]): number {
+  const relevance = matches.reduce((sum, m) => sum + m.score, 0) || 1;
+  const ageDays = (Date.now() - content.collectedAt.getTime()) / (24 * 60 * 60 * 1000);
+  const recency = Math.max(0.5, 1 - (0.5 * ageDays) / TREND_WINDOW_DAYS);
+  return relevance * recency;
+}
+
 export async function matchesRoutes(app: FastifyInstance) {
-  // M4: 追跡対象にマッチした新着コンテンツの一覧。
+  // M4/M5: カテゴリタブごとの「トレンドの新着」。
   // trackedItemId を指定すると、その追跡対象（本・トピック詳細画面）に絞り込む。
+  // category を指定すると、そのタブに対応するコンテンツだけを返す。
   app.get("/matches", async (request, reply) => {
     const parsed = queryFilterSchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.flatten() });
     }
-    const { trackedItemId } = parsed.data;
+    const { trackedItemId, category } = parsed.data;
 
-    const contents = await prisma.content.findMany({
-      where: {
-        matches: trackedItemId ? { some: { trackedItemId } } : { some: {} },
-      },
-      orderBy: { collectedAt: "desc" },
-      take: 50,
-      include: {
-        matches: {
-          orderBy: { score: "desc" },
-          include: { trackedItem: true },
-        },
-      },
-    });
+    const baseWhere = buildWhere(trackedItemId, category);
 
-    return contents.map((content) => ({
-      id: content.id,
-      title: content.title,
-      description: content.description,
-      url: content.url,
-      thumbnailUrl: content.thumbnailUrl,
-      channelTitle: content.channelTitle,
-      publishedAt: content.publishedAt,
-      collectedAt: content.collectedAt,
-      matches: content.matches
-        .filter((match) => !trackedItemId || match.trackedItemId === trackedItemId)
-        .map((match) => ({
+    // まず集計期間内で探し、まだデータが溜まっていなければ期間の制限なしで補う。
+    let contents = await findContents({ ...baseWhere, collectedAt: { gte: windowStart() } });
+    if (contents.length === 0) {
+      contents = await findContents(baseWhere);
+    }
+
+    return contents
+      .map((content) => {
+        const matches = content.matches.filter((match) => {
+          if (trackedItemId) return match.trackedItemId === trackedItemId;
+          if (category && category !== "OTHER") return categoryOf(match.trackedItem) === category;
+          return true;
+        });
+        return { content, matches };
+      })
+      .sort((a, b) => hotScore(b.content, b.matches) - hotScore(a.content, a.matches))
+      .slice(0, TAKE)
+      .map(({ content, matches }) => ({
+        id: content.id,
+        title: content.title,
+        description: content.description,
+        url: content.url,
+        thumbnailUrl: content.thumbnailUrl,
+        channelTitle: content.channelTitle,
+        publishedAt: content.publishedAt,
+        collectedAt: content.collectedAt,
+        topic: content.topic,
+        matches: matches.map((match) => ({
           trackedItemId: match.trackedItemId,
           trackedItemTitle: match.trackedItem.title,
           trackedItemType: match.trackedItem.type,
+          category: categoryOf(match.trackedItem),
           score: match.score,
         })),
-    }));
+      }));
+  });
+}
+
+function buildWhere(trackedItemId: string | undefined, category: FeedCategory | undefined): Prisma.ContentWhereInput {
+  if (trackedItemId) {
+    return { matches: { some: { trackedItemId } } };
+  }
+  // 「その他」は追跡対象のどれにも紐づかなかった、ホットトピック起点のコンテンツ。
+  // = ユーザーが登録していない、今盛り上がっている分野の話題。
+  if (category === "OTHER") {
+    return { topic: { not: null }, matches: { none: {} } };
+  }
+  if (category) {
+    return { matches: { some: { trackedItem: trackedItemWhere(category) } } };
+  }
+  return { matches: { some: {} } };
+}
+
+function findContents(where: Prisma.ContentWhereInput): Promise<ContentWithMatches[]> {
+  return prisma.content.findMany({
+    where,
+    orderBy: { collectedAt: "desc" },
+    // 並べ替えのために新着側を多めに取ってから、盛り上がり順に上位を返す。
+    take: TAKE * 2,
+    include: {
+      matches: {
+        orderBy: { score: "desc" },
+        include: { trackedItem: true },
+      },
+    },
   });
 }

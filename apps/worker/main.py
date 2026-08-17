@@ -19,6 +19,7 @@ def main() -> None:
     print(
         "[collector] 完了: "
         f"追跡対象={stats['tracked_items']}件 "
+        f"ホットトピック={stats['hot_topics']}件 "
         f"取得動画={stats['videos_found']}件 "
         f"新規保存={stats['new_content']}件 "
         f"SQS投入={stats['enqueued']}件"

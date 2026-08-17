@@ -14,12 +14,20 @@ enum TrackedItemType {
   INTEREST
 }
 
+// 本の読書状態。カテゴリタブ「読み終わった本」/「気になっている本」の振り分けに使う。
+enum BookStatus {
+  WANT
+  FINISHED
+}
+
 // M1: 追跡対象（気になる本 / 興味分野）を共通のモデルとして扱う
 model TrackedItem {
   id        String                       @id @default(uuid())
   type      TrackedItemType
   title     String
   note      String?
+  // type: BOOK のときのみ持つ。INTEREST では null。
+  bookStatus BookStatus?
   // 本の検索結果から登録した場合のメタデータ（type: BOOK のみ）
   author       String?
   thumbnailUrl String?
@@ -33,6 +41,7 @@ model TrackedItem {
   matches Match[]
 
   @@index([type])
+  @@index([type, bookStatus])
   @@index([externalId])
 }
 
@@ -52,12 +61,16 @@ model Content {
   channelTitle String?
   publishedAt  DateTime?
   collectedAt  DateTime                     @default(now())
+  // 「その他（今、熱い分野）」タブ用。追跡対象ではなく世の中のホットトピック起点で
+  // 収集したコンテンツに、その検索キーワードを記録する。追跡対象起点なら null。
+  topic        String?
   // M3: 埋め込みベクトル（intfloat/multilingual-e5-small, 384次元）
   embedding    Unsupported("vector(384)")?
 
   matches Match[]
 
   @@unique([source, sourceId])
+  @@index([topic])
 }
 
 // M3: 追跡対象 × 収集コンテンツ の意味的マッチング結果

@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { deleteTrackedItem, fetchTrackedItems } from "@/lib/api";
-import type { TrackedItem, TrackedItemType } from "@/lib/types";
+import { deleteTrackedItem, fetchTrackedItems, updateTrackedItem } from "@/lib/api";
+import type { FeedCategory, TrackedItem } from "@/lib/types";
+import { CATEGORIES, CATEGORY_META, isTrackedCategory } from "@/lib/categories";
 import { AddTrackedItemSection } from "./AddTrackedItemSection";
 import { ContentFeed } from "./ContentFeed";
 import { TrendingSection } from "./TrendingSection";
 
-const TYPE_LABEL: Record<TrackedItemType, string> = {
-  BOOK: "本",
-  INTEREST: "興味分野",
-};
-
 export function Dashboard() {
+  const [category, setCategory] = useState<FeedCategory>("INTEREST");
   const [items, setItems] = useState<TrackedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 追跡対象は一度だけ取得し、タブ切り替えはクライアント側で絞り込む。
   useEffect(() => {
     fetchTrackedItems()
       .then(setItems)
@@ -25,12 +23,46 @@ export function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  const meta = CATEGORY_META[category];
+  const visibleItems = useMemo(
+    () => items.filter((item) => item.category === category),
+    [items, category]
+  );
+
+  const countByCategory = useMemo(() => {
+    const counts: Partial<Record<FeedCategory, number>> = {};
+    for (const item of items) {
+      counts[item.category] = (counts[item.category] ?? 0) + 1;
+    }
+    return counts;
+  }, [items]);
+
   async function handleDelete(id: string) {
+    const previous = items;
     setItems((prev) => prev.filter((i) => i.id !== id));
     try {
       await deleteTrackedItem(id);
     } catch (e) {
+      setItems(previous);
       setError(e instanceof Error ? e.message : "削除に失敗しました");
+    }
+  }
+
+  // 「読み終わった」⇄「気になる」の移動。タブ間を行き来するので一覧から消える。
+  async function handleToggleStatus(item: TrackedItem) {
+    const next = item.bookStatus === "FINISHED" ? "WANT" : "FINISHED";
+    const previous = items;
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === item.id ? { ...i, bookStatus: next, category: next === "FINISHED" ? "FINISHED" : "WANT" } : i
+      )
+    );
+    try {
+      const updated = await updateTrackedItem(item.id, { bookStatus: next });
+      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    } catch (e) {
+      setItems(previous);
+      setError(e instanceof Error ? e.message : "更新に失敗しました");
     }
   }
 
@@ -45,43 +77,91 @@ export function Dashboard() {
               <span aria-hidden>📚</span> ヨミトレ
             </Link>
           </h1>
-          <p className="subtitle">気になる本・興味分野を登録して、話題を探す</p>
+          <p className="subtitle">興味・読んだ本・気になる本ごとに、今の話題を届けます</p>
         </div>
         <Link href="/welcome" className="pill-link">
           タイトル画面へ
         </Link>
       </header>
 
-      <AddTrackedItemSection
-        existingExternalIds={existingExternalIds}
-        onAdded={(item) => setItems((prev) => [item, ...prev])}
-      />
+      <nav className="category-tabs" aria-label="カテゴリ">
+        {CATEGORIES.map((c) => {
+          const count = countByCategory[c.key];
+          return (
+            <button
+              key={c.key}
+              type="button"
+              data-category={c.key}
+              aria-current={category === c.key ? "page" : undefined}
+              className={category === c.key ? "category-tab category-tab-active" : "category-tab"}
+              onClick={() => setCategory(c.key)}
+            >
+              <span aria-hidden className="category-tab-emoji">
+                {c.emoji}
+              </span>
+              <span className="category-tab-label">{c.label}</span>
+              {isTrackedCategory(c.key) && count ? <span className="category-tab-count">{count}</span> : null}
+            </button>
+          );
+        })}
+      </nav>
 
-      <h2>気になる本</h2>
-      {loading ? (
-        <p className="empty">読み込み中...</p>
-      ) : items.length === 0 ? (
-        <p className="empty">まだ追跡対象がありません。上のフォームから登録してください。</p>
-      ) : (
-        <ul>
-          {items.map((item) => (
-            <li key={item.id}>
-              <span className="badge">{TYPE_LABEL[item.type]}</span>
-              <Link href={`/tracked/${item.id}`} className="item-title tracked-link">
-                {item.title}
-              </Link>
-              {item.note && <span className="item-note">{item.note}</span>}
-              <button className="delete-btn" onClick={() => handleDelete(item.id)}>
-                削除
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {error && <p className="error">{error}</p>}
+      <div className="category-panel" data-category={category} key={category}>
+        <div className="category-intro">
+          <h2 className="category-heading">
+            <span aria-hidden>{meta.emoji}</span> {meta.heading}
+          </h2>
+          <p className="category-desc">{meta.description}</p>
+        </div>
 
-      <TrendingSection />
-      <ContentFeed />
+        {isTrackedCategory(category) && (
+          <>
+            <AddTrackedItemSection
+              category={category}
+              existingExternalIds={existingExternalIds}
+              onAdded={(item) => setItems((prev) => [item, ...prev])}
+            />
+
+            <section className="tracked-section">
+              <h2>{meta.listHeading}</h2>
+              {loading ? (
+                <p className="empty">読み込み中...</p>
+              ) : visibleItems.length === 0 ? (
+                <p className="empty">
+                  まだ登録がありません。上のフォームから{meta.heading}を追加してください。
+                </p>
+              ) : (
+                <ul>
+                  {visibleItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="badge category-badge">{CATEGORY_META[item.category].label}</span>
+                      <Link href={`/tracked/${item.id}`} className="item-title tracked-link">
+                        {item.title}
+                      </Link>
+                      {item.note && <span className="item-note">{item.note}</span>}
+                      <div className="item-actions">
+                        {item.type === "BOOK" && (
+                          <button type="button" className="status-btn" onClick={() => handleToggleStatus(item)}>
+                            {item.bookStatus === "FINISHED" ? "気になるに戻す" : "読み終わった"}
+                          </button>
+                        )}
+                        <button className="delete-btn" onClick={() => handleDelete(item.id)}>
+                          削除
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+
+        {error && <p className="error">{error}</p>}
+
+        <TrendingSection category={category} />
+        <ContentFeed category={category} heading={meta.feedHeading} />
+      </div>
     </main>
   );
 }

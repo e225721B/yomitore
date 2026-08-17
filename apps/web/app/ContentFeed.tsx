@@ -2,25 +2,25 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { fetchMatches } from "@/lib/api";
-import type { MatchedContent } from "@/lib/types";
+import type { FeedCategory, MatchedContent } from "@/lib/types";
+import { CATEGORY_META } from "@/lib/categories";
 
 function formatDate(value: string | null): string {
   if (!value) return "";
   return new Date(value).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" });
 }
 
-const TYPE_LABEL = { BOOK: "本", INTEREST: "興味分野" } as const;
-
 function matchReasonLabel(match: MatchedContent["matches"][number]): string {
-  return `${TYPE_LABEL[match.trackedItemType]}「${match.trackedItemTitle}」と${Math.round(match.score * 100)}%一致`;
+  return `${CATEGORY_META[match.category].label}「${match.trackedItemTitle}」と${Math.round(match.score * 100)}%一致`;
 }
 
 type Props = {
   trackedItemId?: string;
+  category?: FeedCategory;
   heading?: string;
 };
 
-export function ContentFeed({ trackedItemId, heading = "新着" }: Props) {
+export function ContentFeed({ trackedItemId, category, heading = "新着" }: Props) {
   const [contents, setContents] = useState<MatchedContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,7 +30,7 @@ export function ContentFeed({ trackedItemId, heading = "新着" }: Props) {
     (isRefresh: boolean) => {
       if (isRefresh) setRefreshing(true);
       setError(null);
-      fetchMatches(trackedItemId)
+      fetchMatches({ trackedItemId, category })
         .then(setContents)
         .catch((e) => setError(e instanceof Error ? e.message : "取得に失敗しました"))
         .finally(() => {
@@ -38,7 +38,7 @@ export function ContentFeed({ trackedItemId, heading = "新着" }: Props) {
           setRefreshing(false);
         });
     },
-    [trackedItemId]
+    [trackedItemId, category]
   );
 
   useEffect(() => {
@@ -60,7 +60,9 @@ export function ContentFeed({ trackedItemId, heading = "新着" }: Props) {
         <p className="error">{error}</p>
       ) : contents.length === 0 ? (
         <p className="empty">
-          まだ新着コンテンツがありません。追跡対象を登録し、収集・マッチングワーカーを実行してください。
+          {category === "OTHER"
+            ? "まだ熱い分野のコンテンツがありません。収集・マッチングワーカーを実行してください。"
+            : "まだ新着コンテンツがありません。追跡対象を登録し、収集・マッチングワーカーを実行してください。"}
         </p>
       ) : (
         <ul className="feed">
@@ -81,11 +83,16 @@ export function ContentFeed({ trackedItemId, heading = "新着" }: Props) {
                   {content.publishedAt && ` · ${formatDate(content.publishedAt)}`}
                 </div>
                 <div className="feed-matches">
-                  {content.matches.map((match) => (
-                    <span key={match.trackedItemId} className="badge match-badge">
-                      {matchReasonLabel(match)}
-                    </span>
-                  ))}
+                  {/* 「その他」は追跡対象に紐づかないので、代わりに分野名を出す */}
+                  {content.matches.length === 0 && content.topic ? (
+                    <span className="badge match-badge">🔥 {content.topic}</span>
+                  ) : (
+                    content.matches.map((match) => (
+                      <span key={match.trackedItemId} className="badge match-badge">
+                        {matchReasonLabel(match)}
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
             </li>
