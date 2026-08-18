@@ -12,14 +12,17 @@ const createTrackedItemSchema = z.object({
   externalId: z.string().trim().max(200).optional(),
   // 本のみ。省略時は「気になっている本」として登録する。
   bookStatus: z.enum(["WANT", "FINISHED"]).optional(),
+  // 読了日。読了本の登録画面から "YYYY-MM-DD" で送られてくる。省略時は登録時刻。
+  finishedAt: z.coerce.date().optional(),
 });
 
 const updateTrackedItemSchema = z
   .object({
     note: z.string().trim().max(1000).nullable().optional(),
     bookStatus: z.enum(["WANT", "FINISHED"]).optional(),
+    finishedAt: z.coerce.date().nullable().optional(),
   })
-  .refine((v) => v.note !== undefined || v.bookStatus !== undefined, {
+  .refine((v) => v.note !== undefined || v.bookStatus !== undefined || v.finishedAt !== undefined, {
     message: "更新する項目がありません",
   });
 
@@ -65,7 +68,7 @@ export async function trackedItemsRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: parsed.error.flatten() });
     }
 
-    const { externalId, bookStatus, ...rest } = parsed.data;
+    const { externalId, bookStatus, finishedAt, ...rest } = parsed.data;
     if (externalId) {
       const existing = await prisma.trackedItem.findFirst({ where: { externalId } });
       if (existing) {
@@ -73,12 +76,15 @@ export async function trackedItemsRoutes(app: FastifyInstance) {
       }
     }
 
+    const status = rest.type === "BOOK" ? bookStatus ?? "WANT" : null;
     const item = await prisma.trackedItem.create({
       data: {
         ...rest,
         externalId,
         // 興味分野は読書状態を持たない
-        bookStatus: rest.type === "BOOK" ? bookStatus ?? "WANT" : null,
+        bookStatus: status,
+        // 読了日は読了本だけが持つ。指定がなければ登録時刻を読了日とみなす。
+        finishedAt: status === "FINISHED" ? finishedAt ?? new Date() : null,
       },
     });
     return reply.status(201).send(withCategory(item));
@@ -96,11 +102,22 @@ export async function trackedItemsRoutes(app: FastifyInstance) {
     if (!existing) {
       return reply.status(404).send({ error: "追跡対象が見つかりません" });
     }
-    if (parsed.data.bookStatus && existing.type !== "BOOK") {
+    if ((parsed.data.bookStatus || parsed.data.finishedAt) && existing.type !== "BOOK") {
       return reply.status(400).send({ error: "読書状態を持てるのは本だけです" });
     }
 
-    const item = await prisma.trackedItem.update({ where: { id }, data: parsed.data });
+    // 読書状態が変わったら読了日も追随させる。
+    // FINISHED になったら（明示指定がなければ）その時刻、WANT に戻したら null。
+    const nextStatus = parsed.data.bookStatus ?? existing.bookStatus;
+    const finishedAt =
+      nextStatus === "FINISHED"
+        ? parsed.data.finishedAt ?? existing.finishedAt ?? new Date()
+        : null;
+
+    const item = await prisma.trackedItem.update({
+      where: { id },
+      data: { ...parsed.data, ...(existing.type === "BOOK" ? { finishedAt } : {}) },
+    });
     return withCategory(item);
   });
 
