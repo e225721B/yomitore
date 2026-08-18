@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Sidebar } from "./Sidebar";
 
 export const metadata: Metadata = {
   title: "ヨミトレ",
@@ -9,7 +10,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        <div className="app-shell">
+          <Sidebar />
+          <div className="app-content">{children}</div>
+        </div>
+      </body>
     </html>
   );
 }
