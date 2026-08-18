@@ -46,6 +46,28 @@ pnpm dev:api
 pnpm dev:web
 ```
 
+### ローカルインフラ（Docker）の起動・停止・再起動
+
+サービス名は `postgres` / `redis` / `sqs` の3つ。
+
+```bash
+docker compose ps                      # 状態確認
+docker compose up -d                   # 起動
+docker compose restart                 # 再起動（データは保持される）
+docker compose restart postgres        # 個別に再起動（postgres / redis / sqs）
+docker compose logs -f postgres        # ログを追う（不調の原因を見るとき）
+docker compose stop                    # 停止（コンテナは残す）
+docker compose down                    # 停止＋コンテナ削除（DBデータは volume に残る）
+docker compose down -v && docker compose up -d   # DBを作り直す（データは全消去。マイグレーションからやり直し）
+docker compose up -d --force-recreate  # docker-compose.yml を変更したあとの作り直し
+```
+
+`Cannot connect to the Docker daemon` と出るときは Docker Desktop 自体が起動していない。macOS なら次で起動してから、上のコマンドを実行する。
+
+```bash
+open -a Docker
+```
+
 ### 収集ワーカー（Python, M2: YouTube収集 → Content保存 → SQS投入）
 
 `docker compose up -d` で Postgres/Redis に加え、ローカル用 SQS 互換キュー（ElasticMQ, `collection-queue`）も起動する。
