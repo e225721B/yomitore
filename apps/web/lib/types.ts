@@ -10,6 +10,8 @@ export type TrackedItem = {
   id: string;
   type: TrackedItemType;
   bookStatus: BookStatus | null;
+  /** 読了日（ISO文字列）。読了本だけが持つ。 */
+  finishedAt: string | null;
   category: TrackedCategory;
   title: string;
   note: string | null;

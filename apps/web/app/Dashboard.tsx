@@ -5,6 +5,7 @@ import Link from "next/link";
 import { deleteTrackedItem, fetchTrackedItems, updateTrackedItem } from "@/lib/api";
 import type { FeedCategory, TrackedItem } from "@/lib/types";
 import { CATEGORIES, CATEGORY_META, isTrackedCategory } from "@/lib/categories";
+import { formatDate } from "@/lib/date";
 import { AddTrackedItemSection } from "./AddTrackedItemSection";
 import { ContentFeed } from "./ContentFeed";
 import { TrendingSection } from "./TrendingSection";
@@ -139,6 +140,7 @@ export function Dashboard() {
                         {item.title}
                       </Link>
                       {item.note && <span className="item-note">{item.note}</span>}
+                      {item.finishedAt && <span className="item-meta">{formatDate(item.finishedAt)}に読了</span>}
                       <div className="item-actions">
                         {item.type === "BOOK" && (
                           <button type="button" className="status-btn" onClick={() => handleToggleStatus(item)}>

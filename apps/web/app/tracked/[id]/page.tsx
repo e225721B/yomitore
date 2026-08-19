@@ -6,6 +6,7 @@ import Link from "next/link";
 import { deleteTrackedItem, fetchTrackedItem, updateTrackedItem } from "@/lib/api";
 import type { TrackedItem } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
+import { formatDate } from "@/lib/date";
 import { ContentFeed } from "@/app/ContentFeed";
 
 export default function TrackedItemDetailPage() {
@@ -64,6 +65,7 @@ export default function TrackedItemDetailPage() {
               </span>
               <h1>{item.title}</h1>
               {item.author && <p className="detail-author">{item.author}</p>}
+              {item.finishedAt && <p className="detail-author">{formatDate(item.finishedAt)}に読了</p>}
               {item.note && <p className="item-note">{item.note}</p>}
             </div>
             <div className="item-actions">

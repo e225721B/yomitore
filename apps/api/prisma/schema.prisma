@@ -28,6 +28,8 @@ model TrackedItem {
   note      String?
   // type: BOOK のときのみ持つ。INTEREST では null。
   bookStatus BookStatus?
+  // 読了日。bookStatus: FINISHED のときのみ持ち、WANT に戻すと null に戻る。
+  finishedAt DateTime?
   // 本の検索結果から登録した場合のメタデータ（type: BOOK のみ）
   author       String?
   thumbnailUrl String?

@@ -149,6 +149,135 @@ main {
   padding: 3rem 1.5rem 5rem;
 }
 
+/* ---------- アプリ全体の骨格（左サイドバー + 本文） ----------
+   サイドバーの項目は lib/nav.ts の NAV_SECTIONS で決まる。
+   ページが増えても、この CSS はそのまま使える。 */
+
+.app-shell {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100dvh;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  flex: 0 0 15rem;
+  width: 15rem;
+  height: 100dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding: 1.75rem 0.9rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.6rem;
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+}
+
+.sidebar-brand:hover {
+  color: var(--accent);
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sidebar-section-label {
+  margin: 0;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--r-sm);
+  color: var(--fg-soft);
+  text-decoration: none;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.sidebar-link:hover {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+.sidebar-link-active,
+.sidebar-link-active:hover {
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+
+.sidebar-link-emoji {
+  font-size: 1.05rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.sidebar-link-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-link-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sidebar-link-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* サイドバーの中はカードではないので、リスト項目の共通装飾を打ち消す */
+.sidebar li {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  animation: none;
+}
+
+.sidebar li:hover {
+  transform: none;
+}
+
 /* ---------- 見出し ---------- */
 
 h1 {
@@ -1124,6 +1253,68 @@ li:hover .tracked-link {
   transform: none;
 }
 
+/* ---------- 読了本の登録ページ ---------- */
+
+.add-section .book-search,
+.add-section .book-confirm,
+.manual-entry-form {
+  margin-bottom: 0.9rem;
+}
+
+.register-date {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.register-date label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.register-date-hint {
+  color: var(--muted);
+  font-size: 0.76rem;
+  flex: 1 1 100%;
+}
+
+.manual-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.manual-entry-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.manual-entry-form input {
+  flex: 1 1 12rem;
+}
+
+/* 一覧に添える読了日などの補足 */
+.item-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 /* ---------- 本・トピック詳細画面 ---------- */
 
 .back-link {
@@ -1287,6 +1478,50 @@ li:nth-child(n + 6) {
 }
 
 /* ---------- 狭い画面 ---------- */
+
+/* サイドバーは横並びの上部バーに切り替える。項目が増えても横スクロールで収まる。 */
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.6rem 0.9rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+  }
+
+  .sidebar-section {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sidebar-section-label {
+    display: none;
+  }
+
+  .sidebar-list {
+    flex-direction: row;
+  }
+
+  .sidebar-link {
+    white-space: nowrap;
+    padding: 0.4rem 0.7rem;
+  }
+
+  .sidebar-link-desc {
+    display: none;
+  }
+}
 
 @media (max-width: 560px) {
   main {

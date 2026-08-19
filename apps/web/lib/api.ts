@@ -48,6 +48,8 @@ export async function createTrackedItem(input: {
   thumbnailUrl?: string;
   externalId?: string;
   bookStatus?: BookStatus;
+  /** 読了日。"YYYY-MM-DD" 形式。読了本の登録時のみ渡す。 */
+  finishedAt?: string;
 }): Promise<TrackedItem> {
   const res = await fetch(`${API_URL}/tracked-items`, {
     method: "POST",
@@ -61,10 +63,10 @@ export async function createTrackedItem(input: {
   return res.json();
 }
 
-/** 読書状態の変更（「気になる本」⇄「読み終わった本」の移動） */
+/** 読書状態・読了日・メモの変更（「気になる本」⇄「読み終わった本」の移動を含む） */
 export async function updateTrackedItem(
   id: string,
-  input: { bookStatus?: BookStatus; note?: string | null }
+  input: { bookStatus?: BookStatus; note?: string | null; finishedAt?: string | null }
 ): Promise<TrackedItem> {
   const res = await fetch(`${API_URL}/tracked-items/${id}`, {
     method: "PATCH",
