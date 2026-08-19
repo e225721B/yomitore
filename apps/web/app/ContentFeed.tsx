@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { fetchMatches } from "@/lib/api";
 import type { FeedCategory, MatchedContent } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
@@ -18,42 +18,43 @@ type Props = {
   trackedItemId?: string;
   category?: FeedCategory;
   heading?: string;
+  /** 値が変わると読み直す。収集の完了を画面に反映させるために使う。 */
+  refreshKey?: number;
+  /** 見出しの横に並べる操作（ダッシュボードでは「今すぐ収集」）。 */
+  action?: ReactNode;
 };
 
-export function ContentFeed({ trackedItemId, category, heading = "新着" }: Props) {
+export function ContentFeed({ trackedItemId, category, heading = "新着", refreshKey = 0, action }: Props) {
   const [contents, setContents] = useState<MatchedContent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
-    (isRefresh: boolean) => {
-      if (isRefresh) setRefreshing(true);
+    () => {
       setError(null);
       fetchMatches({ trackedItemId, category })
         .then(setContents)
         .catch((e) => setError(e instanceof Error ? e.message : "取得に失敗しました"))
-        .finally(() => {
-          setLoading(false);
-          setRefreshing(false);
-        });
+        .finally(() => setLoading(false));
     },
     [trackedItemId, category]
   );
 
   useEffect(() => {
     setLoading(true);
-    load(false);
-  }, [load]);
+    load();
+  }, [load, refreshKey]);
 
   return (
     <section>
-      <div className="section-header">
+      {action ? (
+        <div className="section-header">
+          <h2>{heading}</h2>
+          {action}
+        </div>
+      ) : (
         <h2>{heading}</h2>
-        <button type="button" className="refresh-btn" onClick={() => load(true)} disabled={loading || refreshing}>
-          {refreshing ? "更新中..." : "更新"}
-        </button>
-      </div>
+      )}
       {loading ? (
         <p className="empty">読み込み中...</p>
       ) : error ? (

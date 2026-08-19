@@ -163,17 +163,17 @@ fi
 # ---------- 実行 ----------
 
 if should_run collect; then
-  step "M2: コンテンツ収集${MOCK:+（mock）}"
+  step "コンテンツ収集中${MOCK:+（mock）}"
   (cd "$WORKER_DIR" && "$PY" main.py $MOCK)
 fi
 
 if should_run match; then
-  step "M3: マッチング${BACKFILL:+（backfill）}"
+  step "マッチング中${BACKFILL:+（backfill）}"
   (cd "$WORKER_DIR" && "$PY" matcher_main.py $BACKFILL)
 fi
 
 if should_run trends; then
-  step "M5: トレンド集計"
+  step "トレンド集計中"
   (cd "$WORKER_DIR" && "$PY" trends_main.py)
 fi
 

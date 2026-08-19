@@ -100,6 +100,19 @@ pnpm dev:stop                         # API/Web の dev サーバーを停止
 そのほか、`apps/worker` の `.venv` / `.env` が無ければ自動で作り、`YOUTUBE_API_KEY` が
 未設定なら `--mock` に切り替える。追跡対象が0件のときは（収集・マッチングが空回りするため）警告する。
 
+### 画面から収集する（「今すぐ収集」ボタン）
+
+本を登録しただけでは動画は増えない。収集 → マッチング → トレンド集計 を回して初めて表示に反映される
+（新着・トレンドの「更新」ボタンは、サーバーが持っているデータを取り直すだけで収集はしない）。
+
+ダッシュボード右上の**「今すぐ収集」**を押すと、API が `scripts/run-workers.sh --no-app` を起動して
+同じパイプラインをその場で実行する。実行中はボタンに進捗（`▶ M2: コンテンツ収集` など）が出て、
+終わると新着とトレンドが自動で読み直される。所要は実測15秒程度（初回は埋め込みモデルの読み込みで数分かかる）。
+
+ローカル開発用の仕組みである点に注意。API が同じマシンの Python ワーカーを直接叩くため、
+`apps/worker/.venv` が無い環境（本番のコンテナなど）では `POST /collect` が 503 を返して無効になる。
+本番では収集ワーカーを CronJob として定期実行する想定。
+
 ### 収集ワーカー（Python, M2: YouTube収集 → Content保存 → SQS投入）
 
 `docker compose up -d` で Postgres/Redis に加え、ローカル用 SQS 互換キュー（ElasticMQ, `collection-queue`）も起動する。
@@ -167,11 +180,13 @@ set -a; source .env; set +a
 | メソッド | パス | 概要 |
 |---|---|---|
 | GET | /tracked-items | 追跡対象の一覧取得（`category`: `INTEREST` \| `FINISHED` \| `WANT` で絞り込み可） |
-| POST | /tracked-items | 追跡対象の登録（`type`: `BOOK` \| `INTEREST`, `title`, `note?`, `bookStatus?`: `WANT` \| `FINISHED`。本で省略時は `WANT`） |
-| PATCH | /tracked-items/:id | 読書状態・メモの更新（`bookStatus`, `note`） |
+| POST | /tracked-items | 追跡対象の登録（`type`: `BOOK` \| `INTEREST`, `title`, `note?`, `bookStatus?`: `WANT` \| `FINISHED`, `finishedAt?`。本で省略時は `WANT`、`FINISHED` で `finishedAt` 省略時は登録時刻） |
+| PATCH | /tracked-items/:id | 読書状態・読了日・メモの更新（`bookStatus`, `finishedAt`, `note`）。`FINISHED` にすると読了日が入り、`WANT` に戻すと消える |
 | DELETE | /tracked-items/:id | 追跡対象の削除 |
 | GET | /matches | カテゴリごとのトレンド新着（`category` または `trackedItemId` で絞り込み、最大50件） |
 | GET | /trends | トレンドランキング（`category` で絞り込み。Redisキャッシュのみ参照、DBアクセスなし） |
+| POST | /collect | 収集パイプラインをその場で起動（画面の「今すぐ収集」ボタン用）。すぐ 202 を返し、実行は非同期。実行中は 409 |
+| GET | /collect | 収集の実行状況（`status`: `idle` \| `running` \| `succeeded` \| `failed`、ワーカーの出力ログ付き） |
 
 ## インフラ（AWS / Terraform）
 
