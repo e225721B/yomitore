@@ -362,13 +362,22 @@ main > h2 {
   color: var(--accent);
 }
 
-.brand-link span[aria-hidden] {
+.brand-link span[aria-hidden],
+.brand-icon {
   display: inline-block;
   transition: transform var(--dur) var(--ease);
 }
 
-.brand-link:hover span[aria-hidden] {
+.brand-link:hover span[aria-hidden],
+.brand-link:hover .brand-icon {
   transform: rotate(-8deg) scale(1.1);
+}
+
+/* 見出しの文字サイズに合わせて縦位置をそろえる */
+.brand-icon {
+  width: auto;
+  height: 1.5em;
+  border-radius: 0.35rem;
 }
 
 /* 明示的な導線。詳細画面の .back-link と同じピル型で揃える。 */
