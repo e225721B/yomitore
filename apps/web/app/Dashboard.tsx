@@ -93,7 +93,7 @@ export function Dashboard() {
           <p className="subtitle">興味・読んだ本・気になる本ごとに、今の話題を届けます</p>
         </div>
         <Link href="/welcome" className="pill-link">
-          タイトル画面へ
+          タイトルへ
         </Link>
       </header>
 

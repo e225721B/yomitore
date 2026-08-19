@@ -39,7 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/releases",
         label: "新刊・続編",
         emoji: "🔔",
-        description: "登録した本の続編や新刊",
+        description: "読んだ本の続編や新刊",
       },
     ],
   },
