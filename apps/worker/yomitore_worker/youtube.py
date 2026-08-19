@@ -8,20 +8,41 @@ from .db import RawContent
 SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 
 
+class QuotaExceeded(RuntimeError):
+    """YouTube Data API の1日の割り当てを使い切った状態。"""
+
+
+class SearchFailed(RuntimeError):
+    """クォータ以外の理由で検索に失敗した状態（キー不正・ネットワーク断など）。"""
+
+
 def search_videos(api_key: str, query: str, max_results: int) -> list[RawContent]:
-    response = requests.get(
-        SEARCH_URL,
-        params={
-            "part": "snippet",
-            "q": query,
-            "type": "video",
-            "order": "relevance",
-            "maxResults": max_results,
-            "key": api_key,
-        },
-        timeout=10,
-    )
-    response.raise_for_status()
+    # 例外メッセージにリクエストURLを含めない。URLにはAPIキーが乗っており、
+    # raise_for_status() のメッセージはそのままログや画面に出てしまうため。
+    try:
+        response = requests.get(
+            SEARCH_URL,
+            params={
+                "part": "snippet",
+                "q": query,
+                "type": "video",
+                "order": "relevance",
+                "maxResults": max_results,
+                "key": api_key,
+            },
+            timeout=10,
+        )
+    except requests.RequestException as err:
+        raise SearchFailed(f"YouTube API に接続できませんでした: {type(err).__name__}") from None
+
+    # 割り当て超過は 429、または 403 + reason=quotaExceeded で返る
+    if response.status_code == 429 or (
+        response.status_code == 403 and "quota" in response.text.lower()
+    ):
+        raise QuotaExceeded("YouTube API の1日の割り当てを使い切りました")
+    if not response.ok:
+        raise SearchFailed(f"YouTube API がエラーを返しました (HTTP {response.status_code})")
+
     items = response.json().get("items", [])
 
     results = []

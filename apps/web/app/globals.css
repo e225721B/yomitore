@@ -1276,6 +1276,10 @@ li:hover .tracked-link {
   color: var(--danger);
 }
 
+.collect-status-warn {
+  color: var(--sub);
+}
+
 /* ---------- 読了本の登録ページ ---------- */
 
 .add-section .book-search,

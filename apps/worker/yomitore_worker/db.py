@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 import psycopg
 
@@ -12,6 +12,8 @@ class TrackedItem:
     title: str
     note: str | None = None
     book_status: str | None = None
+    # 収集ワーカーが最後にこの対象で検索した時刻。クールダウン判定に使う。
+    last_collected_at: datetime | None = None
 
 
 def category_of(item_type: str, book_status: str | None) -> str:
@@ -39,12 +41,29 @@ def connect(database_url: str) -> psycopg.Connection:
 def fetch_tracked_items(conn: psycopg.Connection) -> list[TrackedItem]:
     with conn.cursor() as cur:
         cur.execute(
-            'SELECT id, type, title, note, "bookStatus" FROM "TrackedItem" ORDER BY "createdAt" DESC'
+            'SELECT id, type, title, note, "bookStatus", "lastCollectedAt" '
+            'FROM "TrackedItem" ORDER BY "createdAt" DESC'
         )
         return [
-            TrackedItem(id=row[0], type=row[1], title=row[2], note=row[3], book_status=row[4])
+            TrackedItem(
+                id=row[0],
+                type=row[1],
+                title=row[2],
+                note=row[3],
+                book_status=row[4],
+                last_collected_at=row[5],
+            )
             for row in cur.fetchall()
         ]
+
+
+def mark_collected(conn: psycopg.Connection, tracked_item_id: str) -> None:
+    """収集済みの印を付ける。次回以降、クールダウン中は再検索しない。"""
+    with conn.cursor() as cur:
+        cur.execute(
+            'UPDATE "TrackedItem" SET "lastCollectedAt" = %s WHERE id = %s',
+            (datetime.now(timezone.utc).replace(tzinfo=None), tracked_item_id),
+        )
 
 
 def upsert_content(conn: psycopg.Connection, content: RawContent, topic: str | None = None) -> tuple[str, bool]:

@@ -66,7 +66,11 @@ export function CollectNowButton({ onFinished }: Props) {
         {running ? "収集中..." : "今すぐ収集"}
       </button>
       {running && lastLine && <span className="collect-status">{lastLine}</span>}
-      {!running && job?.status === "succeeded" }
+      {!running && job?.status === "succeeded" && (
+        <span className={job.warning ? "collect-status collect-status-warn" : "collect-status"}>
+          {job.warning ?? "収集が完了しました"}
+        </span>
+      )}
       {!running && job?.status === "failed" && (
         <span className="collect-status collect-status-error">{job.error ?? "収集に失敗しました"}</span>
       )}

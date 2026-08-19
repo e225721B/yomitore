@@ -83,4 +83,6 @@ export type CollectionJob = {
   /** ワーカーの出力（直近のみ）。進捗表示に使う */
   log: string[];
   error: string | null;
+  /** 成功はしたが伝えるべきことがある場合の注意書き */
+  warning: string | null;
 };
