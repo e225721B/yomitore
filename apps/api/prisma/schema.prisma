@@ -20,6 +20,12 @@ enum BookStatus {
   FINISHED
 }
 
+// 登録した本に対して見つかった新刊。続編かどうかを kind で区別する。
+enum ReleaseKind {
+  SEQUEL // シリーズの続き（タイトルが一致する別の巻）
+  SAME_AUTHOR // 同じ著者の新刊
+}
+
 // M1: 追跡対象（気になる本 / 興味分野）を共通のモデルとして扱う
 model TrackedItem {
   id        String                       @id @default(uuid())
@@ -43,7 +49,8 @@ model TrackedItem {
   createdAt DateTime                     @default(now())
   updatedAt DateTime                     @updatedAt
 
-  matches Match[]
+  matches  Match[]
+  releases BookRelease[]
 
   @@index([type])
   @@index([type, bookStatus])
@@ -91,4 +98,31 @@ model Match {
 
   @@unique([trackedItemId, contentId])
   @@index([contentId])
+}
+
+// 登録した本の続編・同じ著者の新刊。楽天ブックスAPIから日次で検出し、画面で通知する。
+model BookRelease {
+  id            String      @id @default(uuid())
+  trackedItemId String
+  kind          ReleaseKind
+  title         String
+  author        String?
+  publisher     String?
+  // 楽天ブックスのISBN。同じ本を二重に通知しないための鍵にする。
+  isbn          String
+  // 発売日。楽天は「2026年09月10日頃」のような表記も返すため、
+  // 解釈できたものだけ日付にし、原文は releaseLabel に残す。
+  releaseDate   DateTime?
+  releaseLabel  String
+  url           String
+  thumbnailUrl  String?
+  detectedAt    DateTime    @default(now())
+  // 既読になった時刻。null なら未読（サイドバーのバッジに出る）。
+  seenAt        DateTime?
+
+  trackedItem TrackedItem @relation(fields: [trackedItemId], references: [id], onDelete: Cascade)
+
+  @@unique([trackedItemId, isbn])
+  @@index([seenAt])
+  @@index([releaseDate])
 }

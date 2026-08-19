@@ -24,7 +24,7 @@ export function TitleScreen() {
   return (
     <main className="title-screen">
       <div className="title-logo" aria-hidden>
-        📚
+    
       </div>
       <h1 className="title-name">ヨミトレ</h1>
       <p className="title-tagline">読書好きの「気になる」を、良いタイミングで届ける。</p>

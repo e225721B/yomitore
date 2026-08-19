@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { deleteTrackedItem, fetchTrackedItems, updateTrackedItem } from "@/lib/api";
 import type { FeedCategory, TrackedItem } from "@/lib/types";
 import { CATEGORIES, CATEGORY_META, isTrackedCategory } from "@/lib/categories";
@@ -78,13 +79,21 @@ export function Dashboard() {
         <div>
           <h1>
             <Link href="/welcome" className="brand-link">
-              <span aria-hidden>📚</span> ヨミトレ
+              <Image
+                className="brand-icon"
+                src="/yomitore_icon.png"
+                alt=""
+                width={34}
+                height={34}
+                priority
+              />
+              ヨミトレ
             </Link>
           </h1>
           <p className="subtitle">興味・読んだ本・気になる本ごとに、今の話題を届けます</p>
         </div>
         <Link href="/welcome" className="pill-link">
-          タイトル画面へ
+          タイトルへ
         </Link>
       </header>
 

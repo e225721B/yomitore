@@ -7,7 +7,7 @@
 #   ./scripts/run-workers.sh                # 通常実行（YouTube API を呼ぶ）
 #   ./scripts/run-workers.sh --mock         # API キーを使わず合成データで配線だけ確認
 #   ./scripts/run-workers.sh --backfill     # DB内の全Contentを対象にマッチングをやり直す
-#   ./scripts/run-workers.sh --only trends  # 1工程だけ実行（collect / match / trends）
+#   ./scripts/run-workers.sh --only trends  # 1工程だけ実行（collect / match / trends / releases）
 #   ./scripts/run-workers.sh --skip-infra   # Docker/マイグレーションの確認を飛ばす
 #   ./scripts/run-workers.sh --no-app       # API/Web の dev サーバーは起動しない
 #
@@ -59,8 +59,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$ONLY" in
-  "" | collect | match | trends) ;;
-  *) die "--only に指定できるのは collect / match / trends のいずれか（指定値: $ONLY）" ;;
+  "" | collect | match | trends | releases) ;;
+  *) die "--only に指定できるのは collect / match / trends / releases のいずれか（指定値: $ONLY）" ;;
 esac
 
 should_run() { [[ -z "$ONLY" || "$ONLY" == "$1" ]]; }
@@ -175,6 +175,11 @@ fi
 if should_run trends; then
   step "トレンド集計中"
   (cd "$WORKER_DIR" && "$PY" trends_main.py)
+fi
+
+if should_run releases; then
+  step "続編・新刊のチェック"
+  (cd "$WORKER_DIR" && "$PY" releases_main.py)
 fi
 
 printf '\n\033[1;32m✓ 完了\033[0m\n'

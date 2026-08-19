@@ -1,4 +1,5 @@
 import type {
+  BookRelease,
   BookSearchResult,
   BookStatus,
   CollectionJob,
@@ -131,4 +132,30 @@ export async function startCollection(): Promise<CollectionJob> {
     throw new ApiError(message, res.status);
   }
   return res.json();
+}
+
+/** 続編・新刊の一覧。unseenOnly で未読だけに絞れる（サイドバーのバッジ用）。 */
+export async function fetchReleases(unseenOnly = false): Promise<BookRelease[]> {
+  const res = await fetch(withParams("/releases", { unseen: unseenOnly ? "true" : undefined }), {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new ApiError("新刊情報の取得に失敗しました", res.status);
+  return res.json();
+}
+
+export async function markReleaseSeen(id: string, seen: boolean): Promise<BookRelease> {
+  const res = await fetch(`${API_URL}/releases/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seen }),
+  });
+  if (!res.ok) throw new ApiError("更新に失敗しました", res.status);
+  return res.json();
+}
+
+export async function markAllReleasesSeen(): Promise<number> {
+  const res = await fetch(`${API_URL}/releases/seen-all`, { method: "POST" });
+  if (!res.ok) throw new ApiError("更新に失敗しました", res.status);
+  const body = await res.json();
+  return body.updated ?? 0;
 }

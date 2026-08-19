@@ -12,6 +12,8 @@ class TrackedItem:
     title: str
     note: str | None = None
     book_status: str | None = None
+    # 本の著者。続編・新刊の検索キーに使う。
+    author: str | None = None
     # 収集ワーカーが最後にこの対象で検索した時刻。クールダウン判定に使う。
     last_collected_at: datetime | None = None
 
@@ -41,7 +43,7 @@ def connect(database_url: str) -> psycopg.Connection:
 def fetch_tracked_items(conn: psycopg.Connection) -> list[TrackedItem]:
     with conn.cursor() as cur:
         cur.execute(
-            'SELECT id, type, title, note, "bookStatus", "lastCollectedAt" '
+            'SELECT id, type, title, note, "bookStatus", author, "lastCollectedAt" '
             'FROM "TrackedItem" ORDER BY "createdAt" DESC'
         )
         return [
@@ -51,7 +53,8 @@ def fetch_tracked_items(conn: psycopg.Connection) -> list[TrackedItem]:
                 title=row[2],
                 note=row[3],
                 book_status=row[4],
-                last_collected_at=row[5],
+                author=row[5],
+                last_collected_at=row[6],
             )
             for row in cur.fetchall()
         ]
@@ -236,3 +239,45 @@ def fetch_hot_topic_counts(conn: psycopg.Connection, window_days: int) -> list[d
             (window_days,),
         )
         return [{"topic": row[0], "contentCount": row[1]} for row in cur.fetchall()]
+
+
+def upsert_book_release(conn: psycopg.Connection, tracked_item_id: str, kind: str, candidate) -> bool:
+    """新刊情報を保存する。すでに通知済み(trackedItemId + isbn)なら何もしない。
+
+    戻り値は「新規に見つかったか」。既知のものを未読に戻さないため、
+    衝突時は何も更新しない。
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO "BookRelease"
+                (id, "trackedItemId", kind, title, author, publisher, isbn,
+                 "releaseDate", "releaseLabel", url, "thumbnailUrl")
+            VALUES (%s, %s, %s::"ReleaseKind", %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT ("trackedItemId", isbn) DO NOTHING
+            RETURNING id
+            """,
+            (
+                str(uuid.uuid4()),
+                tracked_item_id,
+                kind,
+                candidate.title,
+                candidate.author,
+                candidate.publisher,
+                candidate.isbn,
+                candidate.release_date,
+                candidate.release_label,
+                candidate.url,
+                candidate.thumbnail_url,
+            ),
+        )
+        return cur.fetchone() is not None
+
+
+def update_author(conn: psycopg.Connection, tracked_item_id: str, author: str) -> None:
+    """未設定だった著者を補完する。既に入っている場合は触らない。"""
+    with conn.cursor() as cur:
+        cur.execute(
+            'UPDATE "TrackedItem" SET author = %s WHERE id = %s AND author IS NULL',
+            (author, tracked_item_id),
+        )

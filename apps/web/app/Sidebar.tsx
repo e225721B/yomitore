@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_SECTIONS, isCurrentNavItem, shouldShowNav } from "@/lib/nav";
+import { fetchReleases } from "@/lib/api";
 
 /**
  * 全ページ共通の左サイドバー。項目の追加は lib/nav.ts の NAV_SECTIONS だけで完結する。
@@ -10,12 +13,28 @@ import { NAV_SECTIONS, isCurrentNavItem, shouldShowNav } from "@/lib/nav";
  */
 export function Sidebar() {
   const pathname = usePathname() ?? "/";
+  const [unseenReleases, setUnseenReleases] = useState(0);
+
+  // 未読の新刊件数。ページ遷移のたびに数え直す（既読にした直後も追随させるため）。
+  useEffect(() => {
+    fetchReleases(true)
+      .then((releases) => setUnseenReleases(releases.length))
+      .catch(() => setUnseenReleases(0));
+  }, [pathname]);
+
   if (!shouldShowNav(pathname)) return null;
 
   return (
     <nav className="sidebar" aria-label="メインナビゲーション">
       <Link href="/" className="sidebar-brand">
-        <span aria-hidden>📚</span>
+        <Image
+          className="brand-icon"
+          src="/yomitore_icon.png"
+          alt=""
+          width={34}
+          height={34}
+          priority
+        />
         <span className="sidebar-brand-name">ヨミトレ</span>
       </Link>
 
@@ -39,6 +58,11 @@ export function Sidebar() {
                       <span className="sidebar-link-label">{item.label}</span>
                       {item.description && <span className="sidebar-link-desc">{item.description}</span>}
                     </span>
+                    {item.key === "releases" && unseenReleases > 0 && (
+                      <span className="sidebar-badge" aria-label={`未読 ${unseenReleases}件`}>
+                        {unseenReleases}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

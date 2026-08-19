@@ -63,7 +63,7 @@ export function CollectNowButton({ onFinished }: Props) {
   return (
     <div className="collect-now">
       <button type="button" className="collect-btn" onClick={handleClick} disabled={running}>
-        {running ? "収集中..." : "今すぐ収集"}
+        {running ? "収集中..." : "再収集"}
       </button>
       {running && lastLine && <span className="collect-status">{lastLine}</span>}
       {!running && job?.status === "succeeded" && (

@@ -86,3 +86,26 @@ export type CollectionJob = {
   /** 成功はしたが伝えるべきことがある場合の注意書き */
   warning: string | null;
 };
+
+/** 続編か、同じ著者の新刊か */
+export type ReleaseKind = "SEQUEL" | "SAME_AUTHOR";
+
+/** 登録した本に対して見つかった新刊 */
+export type BookRelease = {
+  id: string;
+  kind: ReleaseKind;
+  title: string;
+  author: string | null;
+  publisher: string | null;
+  isbn: string;
+  releaseDate: string | null;
+  /** 書籍APIが返す発売日の原文（"2024-02" など粒度がまちまち） */
+  releaseLabel: string;
+  url: string;
+  thumbnailUrl: string | null;
+  detectedAt: string;
+  seenAt: string | null;
+  /** どの登録本に対する新刊か */
+  trackedItemId: string;
+  trackedItemTitle: string;
+};

@@ -31,16 +31,15 @@ export type NavSection = {
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    key: "browse",
-    label: "見る",
+    key: "notice",
+    label: "知らせ",
     items: [
       {
-        key: "home",
-        href: "/",
-        label: "ホーム",
-        emoji: "🏠",
-        description: "カテゴリ別の新着とトレンド",
-        match: "exact",
+        key: "releases",
+        href: "/releases",
+        label: "新刊・続編",
+        emoji: "🔔",
+        description: "読んだ本の続編や新刊",
       },
     ],
   },
@@ -53,7 +52,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/books/finished/new",
         label: "読んだ本を登録",
         emoji: "📚",
-        description: "タイトル検索から読了本を追加",
+        description: "読了本を追加",
       },
     ],
   },

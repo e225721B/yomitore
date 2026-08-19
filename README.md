@@ -161,6 +161,36 @@ Web のダッシュボード（`http://localhost:3000`）は 4 つのカテゴ�
 
 並び順は単なる `collectedAt` 降順ではなく、直近 `TREND_WINDOW_DAYS` 以内のコンテンツを対象に「関連する追跡対象の一致度の合計 × 新しさの係数（集計期間の端で 0.5 まで減衰）」で降順に並べる。期間内に 1 件もない場合は期間の制限を外して補う。
 
+### 続編・新刊の通知（Python + Google Books）
+
+登録した本の著者で Google Books を検索し、**続編**（シリーズの続き）と**同じ著者の新刊**を
+`BookRelease` に記録する。画面はサイドバーの「新刊・続編」で、未読件数がバッジに出る。
+
+```bash
+cd apps/worker
+set -a; source .env; set +a
+.venv/bin/python releases_main.py
+# パイプラインの一部としても回る
+./scripts/run-workers.sh --only releases
+```
+
+```
+GOOGLE_BOOKS_API_KEY=（apps/api/.env と同じキー）
+RELEASE_RECENT_DAYS=180   # 何日前までの発売を「新刊」として拾うか（未来の発売日は常に対象）
+```
+
+**未設定でもパイプラインは止まらない**（新刊チェックだけスキップされる）。
+
+続編かどうかは、タイトルから巻数・サブタイトルを落とした「シリーズ名」で判定する
+（`三体` → `三体Ⅱ 黒暗森林 上` は続編、`円 劉慈欣短篇集` は同じ著者の新刊）。
+同じ本そのものは通知しない。重複通知は `(trackedItemId, isbn)` の一意制約で防いでいる
+（ISBN が取れない本は `gb:<volumeId>` を代わりの鍵にする）。
+
+著者が未登録の本は、タイトルから著者を引いて補完し `TrackedItem.author` に保存する
+（本の登録経路によっては著者が入らないことがあるため）。
+
+> Google Books は発売前の書籍が載りにくく、発売予定の通知としては後追いになりやすい。
+
 ### トレンド集計ワーカー（Python, M5: DB集計 → Redisキャッシュ）
 
 ```bash
@@ -187,6 +217,9 @@ set -a; source .env; set +a
 | GET | /trends | トレンドランキング（`category` で絞り込み。Redisキャッシュのみ参照、DBアクセスなし） |
 | POST | /collect | 収集パイプラインをその場で起動（画面の「今すぐ収集」ボタン用）。すぐ 202 を返し、実行は非同期。実行中は 409 |
 | GET | /collect | 収集の実行状況（`status`: `idle` \| `running` \| `succeeded` \| `failed`、ワーカーの出力ログ付き） |
+| GET | /releases | 続編・新刊の一覧（`unseen=true` で未読のみ、最大100件） |
+| PATCH | /releases/:id | 既読／未読の切り替え（`seen`: boolean） |
+| POST | /releases/seen-all | 未読をまとめて既読にする |
 
 ## インフラ（AWS / Terraform）
 
