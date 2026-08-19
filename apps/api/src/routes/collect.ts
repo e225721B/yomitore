@@ -21,6 +21,8 @@ type Job = {
   /** 直近の出力。画面に進捗として出す */
   log: string[];
   error: string | null;
+  /** 成功はしたが、伝えるべきことがある場合（クォータ切れで収集を打ち切ったなど） */
+  warning: string | null;
 };
 
 const LOG_LIMIT = 60;
@@ -31,6 +33,7 @@ const job: Job = {
   finishedAt: null,
   log: [],
   error: null,
+  warning: null,
 };
 
 /** ワークスペースのルート（pnpm-workspace.yaml のある場所）を探す。dist 実行でも効くように上へ辿る。 */
@@ -107,6 +110,7 @@ export async function collectRoutes(app: FastifyInstance) {
     job.finishedAt = null;
     job.log = [];
     job.error = null;
+    job.warning = null;
 
     // dev サーバーは今まさに動いているので起動しない。
     // インフラ確認は残す（Postgres が落ちていると psycopg の生トレースバックで失敗するため、
@@ -129,6 +133,12 @@ export async function collectRoutes(app: FastifyInstance) {
     child.on("close", (code) => {
       job.status = code === 0 ? "succeeded" : "failed";
       job.error = code === 0 ? null : describeFailure(job.log, code);
+      // 収集ワーカーはクォータ切れでも後続を止めずに完走する。成功扱いのままだと
+      // 「1本も集まっていないのに完了」と見えるので、理由を添える。
+      job.warning =
+        code === 0 && /割り当てを使い切りました/.test(job.log.join("\n"))
+          ? "YouTube API の1日の割り当てを使い切ったため、新しい動画は集めていません（リセットは日本時間16時ごろ）"
+          : null;
       job.finishedAt = new Date().toISOString();
       app.log.info({ code }, "collect job finished");
     });

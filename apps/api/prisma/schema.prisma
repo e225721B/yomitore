@@ -35,6 +35,9 @@ model TrackedItem {
   thumbnailUrl String?
   // 外部書籍API（Google Books）のボリュームID。同じ本の重複登録を防ぐために使う。
   externalId   String?
+  // 収集ワーカーが最後にこの対象で検索した時刻。YouTube API のクォータを節約するため、
+  // COLLECT_COOLDOWN_HOURS 以内に収集済みの対象は再検索しない。
+  lastCollectedAt DateTime?
   // M3: 埋め込みベクトル（intfloat/multilingual-e5-small, 384次元）。生成・更新はPythonワーカーが担う。
   embedding Unsupported("vector(384)")?
   createdAt DateTime                     @default(now())
