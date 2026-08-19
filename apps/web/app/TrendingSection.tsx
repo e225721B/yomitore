@@ -8,29 +8,28 @@ import { CATEGORY_META } from "@/lib/categories";
 
 type Props = {
   category: FeedCategory;
+  /** 値が変わると読み直す。収集の完了を画面に反映させるために使う。 */
+  refreshKey?: number;
 };
 
-export function TrendingSection({ category }: Props) {
+export function TrendingSection({ category, refreshKey = 0 }: Props) {
   const [trends, setTrends] = useState<Trends | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(
-    (isRefresh: boolean) => {
-      if (isRefresh) setRefreshing(true);
+    () => {
       setError(null);
       fetchTrends(category)
         .then(setTrends)
-        .catch((e) => setError(e instanceof Error ? e.message : "取得に失敗しました"))
-        .finally(() => setRefreshing(false));
+        .catch((e) => setError(e instanceof Error ? e.message : "取得に失敗しました"));
     },
     [category]
   );
 
   useEffect(() => {
     setTrends(null);
-    load(false);
-  }, [load]);
+    load();
+  }, [load, refreshKey]);
 
   const meta = CATEGORY_META[category];
   const isOther = category === "OTHER";
@@ -40,19 +39,14 @@ export function TrendingSection({ category }: Props) {
 
   return (
     <section>
-      <div className="section-header">
-        <h2>{isOther ? "熱い分野ランキング" : `${meta.label}のトレンド`}</h2>
-        <button type="button" className="refresh-btn" onClick={() => load(true)} disabled={!trends || refreshing}>
-          {refreshing ? "更新中..." : "更新"}
-        </button>
-      </div>
+      <h2>{isOther ? "熱い分野ランキング" : `${meta.label}のトレンド`}</h2>
       {error ? (
         <p className="error">{error}</p>
       ) : !trends ? (
         <p className="empty">読み込み中...</p>
       ) : isEmpty ? (
         <p className="empty">
-          まだトレンドデータがありません。収集・マッチング・集計ワーカーを実行してください。
+          まだトレンドデータがありません。右上の「今すぐ収集」を押すと集まります。
         </p>
       ) : (
         <>

@@ -1,6 +1,7 @@
 import type {
   BookSearchResult,
   BookStatus,
+  CollectionJob,
   FeedCategory,
   MatchedContent,
   TrackedCategory,
@@ -107,5 +108,27 @@ export async function fetchMatches(options: {
 export async function fetchTrends(category?: FeedCategory): Promise<Trends> {
   const res = await fetch(withParams("/trends", { category }), { cache: "no-store" });
   if (!res.ok) throw new ApiError("トレンドの取得に失敗しました", res.status);
+  return res.json();
+}
+
+/** 収集パイプライン（収集 → マッチング → トレンド集計）の実行状況 */
+export async function fetchCollectionJob(): Promise<CollectionJob> {
+  const res = await fetch(`${API_URL}/collect`, { cache: "no-store" });
+  if (!res.ok) throw new ApiError("収集の状況を取得できませんでした", res.status);
+  return res.json();
+}
+
+/** 収集パイプラインの起動。実行はサーバー側で進むので、状況は fetchCollectionJob で追う。 */
+export async function startCollection(): Promise<CollectionJob> {
+  const res = await fetch(`${API_URL}/collect`, { method: "POST" });
+  if (res.status === 409) {
+    const body = await res.json().catch(() => null);
+    if (body?.job) return body.job as CollectionJob;
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const message = typeof body?.error === "string" ? body.error : "収集を開始できませんでした";
+    throw new ApiError(message, res.status);
+  }
   return res.json();
 }

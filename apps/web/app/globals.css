@@ -287,8 +287,7 @@ h1 {
   margin: 0 0 0.35rem;
 }
 
-/* 見出しの左に細いアクセントバー。.section-header の有無に関わらず
-   すべての h2 で見た目を揃える。 */
+/* 見出しの左に細いアクセントバー */
 h2 {
   font-size: 1.15rem;
   letter-spacing: -0.01em;
@@ -591,29 +590,6 @@ li:hover {
 
 section {
   margin-top: 3rem;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.refresh-btn {
-  background: var(--surface);
-  color: var(--accent);
-  border-color: var(--border);
-  padding: 0.3rem 0.85rem;
-  font-size: 0.8rem;
-  box-shadow: none;
-}
-
-.refresh-btn:hover:not(:disabled) {
-  background: var(--accent-tint);
-  border-color: var(--accent);
-  box-shadow: none;
 }
 
 /* ---------- 新着フィード ---------- */
@@ -1088,16 +1064,7 @@ li:hover .tracked-link {
   color: var(--cat-fg);
 }
 
-.category-panel .refresh-btn {
-  color: var(--cat);
-}
-
-.category-panel .refresh-btn:hover:not(:disabled) {
-  background: var(--cat-tint);
-  border-color: var(--cat);
-}
-
-.category-intro {
+.category-panel .category-panel .category-intro {
   padding: 1rem 1.15rem;
   background: var(--cat-tint);
   border: 1px solid transparent;
@@ -1251,6 +1218,62 @@ li:hover .tracked-link {
 .book-search li:hover,
 .book-confirm li:hover {
   transform: none;
+}
+
+/* ---------- 「今すぐ収集」ボタン ---------- */
+
+/* 見出しの右に操作を並べる行。h2 の下マージンはこの行が持つ。 */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.collect-now {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.collect-btn {
+  font-size: 0.82rem;
+  padding: 0.4rem 0.9rem;
+  white-space: nowrap;
+}
+
+/* 実行中は動いていることが分かるように、ゆっくり明滅させる */
+.collect-btn:disabled {
+  animation: collect-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes collect-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.collect-status {
+  color: var(--muted);
+  font-size: 0.76rem;
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collect-status-error {
+  color: var(--danger);
 }
 
 /* ---------- 読了本の登録ページ ---------- */
@@ -1526,6 +1549,12 @@ li:nth-child(n + 6) {
 @media (max-width: 560px) {
   main {
     padding: 2rem 1.1rem 4rem;
+  }
+
+  /* 見出しと「今すぐ収集」が一行に収まらないので折り返す */
+  .section-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .dash-header {

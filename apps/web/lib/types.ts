@@ -74,3 +74,13 @@ export type Trends = {
   items: TrendItem[];
   topics: TrendTopic[];
 };
+
+/** 「今すぐ収集」の実行状況（収集 → マッチング → トレンド集計） */
+export type CollectionJob = {
+  status: "idle" | "running" | "succeeded" | "failed";
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** ワーカーの出力（直近のみ）。進捗表示に使う */
+  log: string[];
+  error: string | null;
+};

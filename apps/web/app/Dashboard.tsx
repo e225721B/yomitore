@@ -8,6 +8,7 @@ import { CATEGORIES, CATEGORY_META, isTrackedCategory } from "@/lib/categories";
 import { formatDate } from "@/lib/date";
 import { AddTrackedItemSection } from "./AddTrackedItemSection";
 import { ContentFeed } from "./ContentFeed";
+import { CollectNowButton } from "./CollectNowButton";
 import { TrendingSection } from "./TrendingSection";
 
 export function Dashboard() {
@@ -15,6 +16,8 @@ export function Dashboard() {
   const [items, setItems] = useState<TrackedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 収集が終わったら新着・トレンドを読み直させるためのカウンタ
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // 追跡対象は一度だけ取得し、タブ切り替えはクライアント側で絞り込む。
   useEffect(() => {
@@ -161,8 +164,13 @@ export function Dashboard() {
 
         {error && <p className="error">{error}</p>}
 
-        <TrendingSection category={category} />
-        <ContentFeed category={category} heading={meta.feedHeading} />
+        <TrendingSection category={category} refreshKey={refreshKey} />
+        <ContentFeed
+          category={category}
+          heading={meta.feedHeading}
+          refreshKey={refreshKey}
+          action={<CollectNowButton onFinished={() => setRefreshKey((n) => n + 1)} />}
+        />
       </div>
     </main>
   );
