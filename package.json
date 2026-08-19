@@ -5,6 +5,7 @@
   "scripts": {
     "dev:api": "node scripts/dev-guard.mjs 4000 && pnpm --filter @yomitore/api dev",
     "dev:web": "node scripts/dev-guard.mjs 3000 && pnpm --filter @yomitore/web dev",
-    "dev:stop": "node scripts/dev-guard.mjs --kill 3000 4000"
+    "dev:stop": "node scripts/dev-guard.mjs --kill 3000 4000",
+    "workers": "bash scripts/run-workers.sh"
   }
 }

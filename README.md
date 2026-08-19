@@ -68,6 +68,38 @@ docker compose up -d --force-recreate  # docker-compose.yml を変更したあ�
 open -a Docker
 ```
 
+### ローカル環境を一括起動（インフラ + dev サーバー + ワーカー）
+
+`scripts/run-workers.sh` が、インフラ起動から画面が見られる状態まで一本で持っていく。
+「まだトレンドデータがありません」と表示されたときも、これを叩けば解消する。
+
+```bash
+pnpm workers                            # = ./scripts/run-workers.sh
+./scripts/run-workers.sh --mock         # YouTube API を呼ばず合成データで配線だけ確認
+./scripts/run-workers.sh --backfill     # DB内の全Contentを対象にマッチングをやり直す
+./scripts/run-workers.sh --only trends  # ワーカーは1工程だけ（collect / match / trends）
+./scripts/run-workers.sh --skip-infra   # Docker/マイグレーションの確認を飛ばして最速で回す
+./scripts/run-workers.sh --no-app       # dev サーバーは起動せず、ワーカーだけ回す
+./scripts/run-workers.sh --help
+```
+
+実行内容（個別に動かしたい場合は以下の各節を参照）:
+
+1. **インフラ**: Docker の起動を確認し、`docker compose up -d` で Postgres が応答するまで待つ
+2. **マイグレーション**: `prisma migrate deploy`（DBを作り直した直後の取りこぼし防止。適用済みなら何もしない）
+3. **dev サーバー**: `pnpm dev:api` / `pnpm dev:web` を**背景で起動**する。すでに起動していればそのまま使う
+4. **ワーカー**: 収集(M2) → マッチング(M3) → トレンド集計(M5) を順に実行
+
+dev サーバーはスクリプト終了後も動き続ける。ログと停止は次の通り。
+
+```bash
+tail -f .logs/api.log .logs/web.log   # 起動ログ・リクエストログ
+pnpm dev:stop                         # API/Web の dev サーバーを停止
+```
+
+そのほか、`apps/worker` の `.venv` / `.env` が無ければ自動で作り、`YOUTUBE_API_KEY` が
+未設定なら `--mock` に切り替える。追跡対象が0件のときは（収集・マッチングが空回りするため）警告する。
+
 ### 収集ワーカー（Python, M2: YouTube収集 → Content保存 → SQS投入）
 
 `docker compose up -d` で Postgres/Redis に加え、ローカル用 SQS 互換キュー（ElasticMQ, `collection-queue`）も起動する。
