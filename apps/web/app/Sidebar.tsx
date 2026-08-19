@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_SECTIONS, isCurrentNavItem, shouldShowNav } from "@/lib/nav";
@@ -26,7 +27,14 @@ export function Sidebar() {
   return (
     <nav className="sidebar" aria-label="メインナビゲーション">
       <Link href="/" className="sidebar-brand">
-        <span aria-hidden>📚</span>
+        <Image
+          className="brand-icon"
+          src="/yomitore_icon.png"
+          alt=""
+          width={34}
+          height={34}
+          priority
+        />
         <span className="sidebar-brand-name">ヨミトレ</span>
       </Link>
 
