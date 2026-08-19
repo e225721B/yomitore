@@ -265,6 +265,21 @@ main {
   line-height: 1.4;
 }
 
+/* 未読件数バッジ */
+.sidebar-badge {
+  margin-left: auto;
+  flex: 0 0 auto;
+  min-width: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--sub);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
 /* サイドバーの中はカードではないので、リスト項目の共通装飾を打ち消す */
 .sidebar li {
   background: none;
@@ -1333,6 +1348,43 @@ li:hover .tracked-link {
 
 .manual-entry-form input {
   flex: 1 1 12rem;
+}
+
+/* ---------- 新刊・続編のお知らせ ---------- */
+
+.release-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.release-item {
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+/* 既読は主張を弱める。未読との差が一目で分かるように左に印を残す。 */
+.release-seen {
+  opacity: 0.62;
+}
+
+.release-item:not(.release-seen) {
+  border-left: 3px solid var(--sub);
+}
+
+.release-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.release-upcoming {
+  color: var(--sub);
+  font-weight: 700;
+}
+
+.release-list .book-info {
+  gap: 0.2rem;
 }
 
 /* 一覧に添える読了日などの補足 */

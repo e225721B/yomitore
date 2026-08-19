@@ -45,6 +45,19 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    key: "notice",
+    label: "知らせ",
+    items: [
+      {
+        key: "releases",
+        href: "/releases",
+        label: "新刊・続編",
+        emoji: "🔔",
+        description: "登録した本の続編や新刊",
+      },
+    ],
+  },
+  {
     key: "register",
     label: "登録する",
     items: [
