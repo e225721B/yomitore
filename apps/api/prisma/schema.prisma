@@ -44,7 +44,7 @@ model TrackedItem {
   // 収集ワーカーが最後にこの対象で検索した時刻。YouTube API のクォータを節約するため、
   // COLLECT_COOLDOWN_HOURS 以内に収集済みの対象は再検索しない。
   lastCollectedAt DateTime?
-  // M3: 埋め込みベクトル（intfloat/multilingual-e5-small, 384次元）。生成・更新はPythonワーカーが担う。
+  // 埋め込みベクトル（paraphrase-multilingual-MiniLM-L12-v2, 384次元）。生成・更新はPythonワーカーが担う。
   embedding Unsupported("vector(384)")?
   createdAt DateTime                     @default(now())
   updatedAt DateTime                     @updatedAt
@@ -76,7 +76,7 @@ model Content {
   // 「その他（今、熱い分野）」タブ用。追跡対象ではなく世の中のホットトピック起点で
   // 収集したコンテンツに、その検索キーワードを記録する。追跡対象起点なら null。
   topic        String?
-  // M3: 埋め込みベクトル（intfloat/multilingual-e5-small, 384次元）
+  // 埋め込みベクトル（paraphrase-multilingual-MiniLM-L12-v2, 384次元）
   embedding    Unsupported("vector(384)")?
 
   matches Match[]
@@ -100,7 +100,7 @@ model Match {
   @@index([contentId])
 }
 
-// 登録した本の続編・同じ著者の新刊。楽天ブックスAPIから日次で検出し、画面で通知する。
+// 登録した本の続編・同じ著者の新刊。Google Books から検出し、画面で通知する。
 model BookRelease {
   id            String      @id @default(uuid())
   trackedItemId String
@@ -108,9 +108,10 @@ model BookRelease {
   title         String
   author        String?
   publisher     String?
-  // 楽天ブックスのISBN。同じ本を二重に通知しないための鍵にする。
+  // ISBN。同じ本を二重に通知しないための鍵にする。
+  // ISBN が取れない書籍は "gb:<volumeId>" を代わりに入れる。
   isbn          String
-  // 発売日。楽天は「2026年09月10日頃」のような表記も返すため、
+  // 発売日。書籍APIは "2024-02" のように粒度がまちまちなので、
   // 解釈できたものだけ日付にし、原文は releaseLabel に残す。
   releaseDate   DateTime?
   releaseLabel  String
