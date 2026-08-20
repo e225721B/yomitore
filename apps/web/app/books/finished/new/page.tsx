@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookSearch } from "@/app/BookSearch";
+import { BookSearch } from "@/components/books/BookSearch";
 import { createTrackedItem, fetchTrackedItems } from "@/lib/api";
 import type { BookSearchResult, TrackedItem } from "@/lib/types";
 import { dateInputToIso, formatDate, toDateInputValue } from "@/lib/date";

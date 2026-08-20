@@ -281,3 +281,22 @@ def update_author(conn: psycopg.Connection, tracked_item_id: str, author: str) -
             'UPDATE "TrackedItem" SET author = %s WHERE id = %s AND author IS NULL',
             (author, tracked_item_id),
         )
+
+
+def upsert_content_collection(
+    conn: psycopg.Connection, content_id: str, tracked_item_id: str, query: str
+) -> None:
+    """「この追跡対象の検索で、この動画が見つかった」ことを記録する。
+
+    新着一覧はこの記録で絞り込むので、カテゴリタブごとに中身が独立する。
+    既存の動画が別の追跡対象の検索でも見つかった場合は、その分だけ行が増える。
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO "ContentCollection" (id, "contentId", "trackedItemId", query)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT ("contentId", "trackedItemId") DO NOTHING
+            """,
+            (str(uuid.uuid4()), content_id, tracked_item_id, query),
+        )

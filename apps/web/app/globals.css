@@ -280,6 +280,13 @@ main {
   text-align: center;
 }
 
+/* タイトル画面へのリンクはサイドバーの最下部に置く。
+   .sidebar は縦方向の flex なので、margin-top: auto で上の余白を全部吸わせる。 */
+.sidebar-title-link {
+  margin-top: auto;
+  justify-content: center;
+}
+
 /* サイドバーの中はカードではないので、リスト項目の共通装飾を打ち消す */
 .sidebar li {
   background: none;
@@ -1608,6 +1615,12 @@ li:nth-child(n + 6) {
 
   .sidebar-link-desc {
     display: none;
+  }
+
+  /* 横並びのときは最下部ではなく右端に寄せる */
+  .sidebar-title-link {
+    margin-top: 0;
+    margin-left: auto;
   }
 }
 

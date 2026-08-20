@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Dashboard } from "./Dashboard";
+import { Dashboard } from "@/components/dashboard/Dashboard";
 import { isOnboarded } from "@/lib/onboarding";
 
 export default function Home() {

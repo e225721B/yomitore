@@ -31,12 +31,14 @@ export type BookSearchResult = {
   description: string | null;
 };
 
+/** その動画がそのタブに出ている理由（＝どの追跡対象の検索で集まったか）。 */
 export type ContentMatch = {
   trackedItemId: string;
   trackedItemTitle: string;
   trackedItemType: TrackedItemType;
   category: TrackedCategory;
-  score: number;
+  /** AIマッチングがある場合の一致度。収集はされたがマッチしなかった場合は null。 */
+  score: number | null;
 };
 
 export type MatchedContent = {

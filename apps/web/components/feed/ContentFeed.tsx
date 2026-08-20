@@ -11,7 +11,11 @@ function formatDate(value: string | null): string {
 }
 
 function matchReasonLabel(match: MatchedContent["matches"][number]): string {
-  return `${CATEGORY_META[match.category].label}「${match.trackedItemTitle}」と${Math.round(match.score * 100)}%一致`;
+  const source = `${CATEGORY_META[match.category].label}「${match.trackedItemTitle}」`;
+  // 一致度は AI マッチングがあるときだけ添える。収集元の表示は常に出す。
+  return match.score === null
+    ? `${source}の検索から`
+    : `${source}と${Math.round(match.score * 100)}%一致`;
 }
 
 type Props = {

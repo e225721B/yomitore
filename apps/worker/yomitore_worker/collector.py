@@ -48,7 +48,7 @@ def run(config: Config, mock: bool = False, force: bool = False) -> dict:
         "quota_exceeded": False,
     }
 
-    def collect(query: str, label: str, topic: str | None) -> bool:
+    def collect(query: str, label: str, topic: str | None, tracked_item_id: str | None = None) -> bool:
         """1クエリ分の収集。失敗しても例外を投げず、成功したかどうかを返す。
 
         1件の検索が失敗しただけでパイプライン全体（マッチング・トレンド集計）まで
@@ -78,6 +78,9 @@ def run(config: Config, mock: bool = False, force: bool = False) -> dict:
 
         for video in videos:
             content_id, created = db.upsert_content(conn, video, topic=topic)
+            # 既出の動画でも、別の追跡対象の検索で見つかったなら収集元として記録する
+            if tracked_item_id:
+                db.upsert_content_collection(conn, content_id, tracked_item_id, query)
             if created:
                 stats["new_content"] += 1
                 queue.send_content_collected_message(sqs_client, queue_url, content_id, video.source_id)
@@ -87,7 +90,13 @@ def run(config: Config, mock: bool = False, force: bool = False) -> dict:
     for item in due_items:
         if stats["quota_exceeded"]:
             break
-        if not collect(item.title, db.category_of(item.type, item.book_status), topic=None):
+        # 興味分野は「分野名 + 本の語」で検索する（分野名だけだと本と無関係な動画が混ざるため）。
+        # 本(BOOK)はタイトルそのもので引く。
+        query = f"{item.title} {config.interest_query_suffix}" if item.type == "INTEREST" else item.title
+
+        if not collect(
+            query, db.category_of(item.type, item.book_status), topic=None, tracked_item_id=item.id
+        ):
             continue
         # mock はクォータを使わないので、収集済みの印は付けない
         # （--mock で動かしたせいで本物の収集がクールダウンで止まるのを避ける）

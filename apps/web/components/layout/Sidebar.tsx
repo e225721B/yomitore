@@ -70,6 +70,10 @@ export function Sidebar() {
           </ul>
         </div>
       ))}
+      {/* 上の余白を吸わせて最下部に寄せる（CSS の margin-top: auto） */}
+      <Link href="/welcome" className="pill-link sidebar-title-link">
+        タイトルへ
+      </Link>
     </nav>
   );
 }

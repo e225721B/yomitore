@@ -13,6 +13,8 @@ export type CategoryMeta = {
   listHeading: string | null;
   /** 新着フィードの見出し */
   feedHeading: string;
+  /** トレンドのランキングを出すか */
+  showTrend: boolean;
 };
 
 export const CATEGORIES: CategoryMeta[] = [
@@ -24,6 +26,7 @@ export const CATEGORIES: CategoryMeta[] = [
     description: "",
     listHeading: "登録した興味分野",
     feedHeading: "興味分野のトレンド新着",
+    showTrend: false,
   },
   {
     key: "FINISHED",
@@ -32,7 +35,8 @@ export const CATEGORIES: CategoryMeta[] = [
     emoji: "📚",
     description: "",
     listHeading: "読み終わった本",
-    feedHeading: "読んだ本のトレンド新着",
+    feedHeading: "読み終わった本に関連した新着動画",
+    showTrend: false,
   },
   {
     key: "WANT",
@@ -41,16 +45,18 @@ export const CATEGORIES: CategoryMeta[] = [
     emoji: "🔖",
     description: "",
     listHeading: "気になっている本",
-    feedHeading: "気になる本のトレンド新着",
+    feedHeading: "気になる本に関連した新着動画",
+    showTrend: true,
   },
   {
     key: "OTHER",
     label: "その他",
     heading: "今、熱い分野",
     emoji: "🔥",
-    description: "今盛り上がっている話題です。",
+    description: "今、本界で盛り上がっている本や話題の分野を集めたランキング",
     listHeading: null,
-    feedHeading: "熱い分野のトレンド新着",
+    feedHeading: "トレンド",
+    showTrend: true,
   },
 ];
 
