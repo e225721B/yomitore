@@ -35,7 +35,7 @@ export const CATEGORIES: CategoryMeta[] = [
     emoji: "📚",
     description: "",
     listHeading: "読み終わった本",
-    feedHeading: "読み終わった本の新着動画",
+    feedHeading: "読み終わった本に関連した新着動画",
     showTrend: false,
   },
   {
@@ -45,7 +45,7 @@ export const CATEGORIES: CategoryMeta[] = [
     emoji: "🔖",
     description: "",
     listHeading: "気になっている本",
-    feedHeading: "気になる本のトレンド新着",
+    feedHeading: "気になる本に関連した新着動画",
     showTrend: true,
   },
   {
@@ -53,9 +53,9 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "その他",
     heading: "今、熱い分野",
     emoji: "🔥",
-    description: "今盛り上がっている話題です。",
+    description: "今、本界で盛り上がっている本や話題の分野を集めたランキング",
     listHeading: null,
-    feedHeading: "熱い分野のトレンド新着",
+    feedHeading: "トレンド",
     showTrend: true,
   },
 ];

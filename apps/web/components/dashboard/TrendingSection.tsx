@@ -72,9 +72,6 @@ export function TrendingSection({ category, refreshKey = 0 }: Props) {
           </ul>
           {trends.windowDays !== null && (
             <p className="trend-note">
-              {isOther
-                ? `直近${trends.windowDays}日間に集まった、登録外の話題の件数でランキング`
-                : `直近${trends.windowDays}日間の関連コンテンツ数（マッチ件数）でランキング`}
             </p>
           )}
         </>
