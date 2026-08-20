@@ -70,6 +70,7 @@ export function Sidebar() {
           </ul>
         </div>
       ))}
+      <Link href="/welcome" className="pill-link">タイトルへ</Link>
     </nav>
   );
 }

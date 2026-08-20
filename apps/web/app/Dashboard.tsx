@@ -92,9 +92,6 @@ export function Dashboard() {
           </h1>
           <p className="subtitle">興味・読んだ本・気になる本ごとに、今の話題を届けます</p>
         </div>
-        <Link href="/welcome" className="pill-link">
-          タイトルへ
-        </Link>
       </header>
 
       <nav className="category-tabs" aria-label="カテゴリ">
@@ -173,7 +170,7 @@ export function Dashboard() {
 
         {error && <p className="error">{error}</p>}
 
-        <TrendingSection category={category} refreshKey={refreshKey} />
+        {meta.showTrend && <TrendingSection category={category} refreshKey={refreshKey} />}
         <ContentFeed
           category={category}
           heading={meta.feedHeading}
