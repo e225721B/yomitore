@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createTrackedItem } from "@/lib/api";
 import type { BookSearchResult } from "@/lib/types";
 import { INTEREST_PRESETS } from "@/lib/interestPresets";
-import { BookSearch } from "@/app/BookSearch";
+import { BookSearch } from "@/components/books/BookSearch";
 import { markOnboarded } from "@/lib/onboarding";
 
 export default function OnboardingPage() {

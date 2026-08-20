@@ -8,7 +8,7 @@ import type { FeedCategory, TrackedItem } from "@/lib/types";
 import { CATEGORIES, CATEGORY_META, isTrackedCategory } from "@/lib/categories";
 import { formatDate } from "@/lib/date";
 import { AddTrackedItemSection } from "./AddTrackedItemSection";
-import { ContentFeed } from "./ContentFeed";
+import { ContentFeed } from "@/components/feed/ContentFeed";
 import { CollectNowButton } from "./CollectNowButton";
 import { TrendingSection } from "./TrendingSection";
 

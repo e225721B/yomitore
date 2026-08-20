@@ -7,7 +7,7 @@ import { deleteTrackedItem, fetchTrackedItem, updateTrackedItem } from "@/lib/ap
 import type { TrackedItem } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/categories";
 import { formatDate } from "@/lib/date";
-import { ContentFeed } from "@/app/ContentFeed";
+import { ContentFeed } from "@/components/feed/ContentFeed";
 
 export default function TrackedItemDetailPage() {
   const params = useParams<{ id: string }>();

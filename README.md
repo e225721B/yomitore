@@ -63,6 +63,27 @@ yomitore/
 └── SPEC.md
 ```
 
+`apps/web` の中は、ルーティングとUI部品を分けている。
+
+```
+apps/web/
+├── app/              # ルーティングのみ（1ページ = 1ディレクトリ）
+│   ├── page.tsx                    # / … ダッシュボード
+│   ├── layout.tsx                  # 全ページ共通の枠（サイドバー）
+│   ├── globals.css                 # 全体のスタイル
+│   ├── welcome/ onboarding/        # タイトル画面・初回設定
+│   ├── releases/                   # 新刊・続編
+│   ├── books/finished/new/         # 読んだ本の登録
+│   └── tracked/[id]/               # 追跡対象の詳細
+├── components/       # UI部品（使う画面ごとに分類）
+│   ├── layout/       # Sidebar … 全ページ共通
+│   ├── dashboard/    # Dashboard, TrendingSection, AddTrackedItemSection, CollectNowButton
+│   ├── books/        # BookSearch … 登録画面とダッシュボードで共用
+│   ├── feed/         # ContentFeed … ダッシュボードと詳細画面で共用
+│   └── welcome/      # TitleScreen
+└── lib/              # 型・APIクライアント・カテゴリ定義・ナビ定義
+```
+
 ### 技術構成
 
 | 層 | 技術 | 役割 |

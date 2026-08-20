@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createTrackedItem } from "@/lib/api";
 import type { BookSearchResult, TrackedCategory, TrackedItem } from "@/lib/types";
-import { BookSearch } from "./BookSearch";
+import { BookSearch } from "@/components/books/BookSearch";
 import { INTEREST_PRESETS } from "@/lib/interestPresets";
 import { CATEGORY_META, creationParamsFor } from "@/lib/categories";
 
