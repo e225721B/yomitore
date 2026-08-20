@@ -49,8 +49,9 @@ model TrackedItem {
   createdAt DateTime                     @default(now())
   updatedAt DateTime                     @updatedAt
 
-  matches  Match[]
-  releases BookRelease[]
+  matches     Match[]
+  releases    BookRelease[]
+  collections ContentCollection[]
 
   @@index([type])
   @@index([type, bookStatus])
@@ -79,7 +80,8 @@ model Content {
   // 埋め込みベクトル（paraphrase-multilingual-MiniLM-L12-v2, 384次元）
   embedding    Unsupported("vector(384)")?
 
-  matches Match[]
+  matches     Match[]
+  collections ContentCollection[]
 
   @@unique([source, sourceId])
   @@index([topic])
@@ -126,4 +128,24 @@ model BookRelease {
   @@unique([trackedItemId, isbn])
   @@index([seenAt])
   @@index([releaseDate])
+}
+
+// どの追跡対象の検索でそのコンテンツが集まったかの記録。
+// 新着一覧はこの「収集元」で絞り込むため、カテゴリタブごとに中身が独立する
+// （AIマッチング(Match)は並び順と一致度バッジにのみ使う）。
+// 同じ動画が別々の追跡対象の検索で見つかった場合は、その数だけ行が増える。
+// 動画そのもの(Content)は (source, sourceId) で1行のまま重複させない。
+model ContentCollection {
+  id            String   @id @default(uuid())
+  contentId     String
+  trackedItemId String
+  // 実際に投げた検索語（例: "SF おすすめ本"）。何で引っかかったかを追えるようにする。
+  query         String
+  collectedAt   DateTime @default(now())
+
+  content     Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  trackedItem TrackedItem @relation(fields: [trackedItemId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, trackedItemId])
+  @@index([trackedItemId])
 }

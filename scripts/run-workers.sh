@@ -7,6 +7,7 @@
 #   ./scripts/run-workers.sh                # 通常実行（YouTube API を呼ぶ）
 #   ./scripts/run-workers.sh --mock         # API キーを使わず合成データで配線だけ確認
 #   ./scripts/run-workers.sh --backfill     # DB内の全Contentを対象にマッチングをやり直す
+#   ./scripts/run-workers.sh --force        # 収集のクールダウンを無視して全対象を引き直す
 #   ./scripts/run-workers.sh --only trends  # 1工程だけ実行（collect / match / trends / releases）
 #   ./scripts/run-workers.sh --skip-infra   # Docker/マイグレーションの確認を飛ばす
 #   ./scripts/run-workers.sh --no-app       # API/Web の dev サーバーは起動しない
@@ -19,6 +20,7 @@ PY="$WORKER_DIR/.venv/bin/python"
 LOG_DIR="$REPO_ROOT/.logs"
 
 MOCK=""
+FORCE=""
 BACKFILL=""
 ONLY=""
 SKIP_INFRA=0
@@ -39,6 +41,7 @@ usage() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mock) MOCK="--mock" ;;
+    --force) FORCE="--force" ;;
     --backfill) BACKFILL="--backfill" ;;
     --only)
       ONLY="${2:-}"
@@ -163,8 +166,8 @@ fi
 # ---------- 実行 ----------
 
 if should_run collect; then
-  step "コンテンツ収集中${MOCK:+（mock）}"
-  (cd "$WORKER_DIR" && "$PY" main.py $MOCK)
+  step "コンテンツ収集中${MOCK:+（mock）}${FORCE:+（force）}"
+  (cd "$WORKER_DIR" && "$PY" main.py $MOCK $FORCE)
 fi
 
 if should_run match; then
