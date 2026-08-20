@@ -11,6 +11,7 @@ class Config:
     aws_region: str
     max_results_per_query: int
     collect_cooldown_hours: int
+    interest_query_suffix: str
     google_books_api_key: str | None
     release_recent_days: int
     match_score_threshold: float
@@ -20,7 +21,6 @@ class Config:
 
 def load_config() -> Config:
     return Config(
-        interest_query_suffix=os.environ.get("INTEREST_QUERY_SUFFIX", "おすすめ本"),
         database_url=os.environ["DATABASE_URL"],
         youtube_api_key=os.environ.get("YOUTUBE_API_KEY") or None,
         sqs_queue_name=os.environ.get("SQS_QUEUE_NAME", "collection-queue"),
@@ -30,6 +30,8 @@ def load_config() -> Config:
         max_results_per_query=int(os.environ.get("MAX_RESULTS_PER_QUERY", "50")),
         # 同じ追跡対象を何度も検索してクォータを使い切らないための間隔（時間）。
         collect_cooldown_hours=int(os.environ.get("COLLECT_COOLDOWN_HOURS", "6")),
+        # 興味分野は分野名だけで引くと本と無関係な動画が混ざるため、本の語を足して検索する
+        interest_query_suffix=os.environ.get("INTEREST_QUERY_SUFFIX"),
         # 続編・新刊の検出に使う。未設定なら新刊チェックはスキップする。
         google_books_api_key=os.environ.get("GOOGLE_BOOKS_API_KEY") or None,
         # 何日前までの発売を「新刊」として拾うか（未来の発売日は常に対象）

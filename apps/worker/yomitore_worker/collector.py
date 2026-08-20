@@ -87,10 +87,11 @@ def run(config: Config, mock: bool = False, force: bool = False) -> dict:
     for item in due_items:
         if stats["quota_exceeded"]:
             break
-        #  item.title が、そのまま YouTube の検索語になる
+        # 興味分野は「分野名 + 本の語」で検索する（分野名だけだと本と無関係な動画が混ざるため）。
+        # 本(BOOK)はタイトルそのもので引く。
         query = f"{item.title} {config.interest_query_suffix}" if item.type == "INTEREST" else item.title
 
-        if not collect(item.title, db.category_of(item.type, item.book_status), topic=None):
+        if not collect(query, db.category_of(item.type, item.book_status), topic=None):
             continue
         # mock はクォータを使わないので、収集済みの印は付けない
         # （--mock で動かしたせいで本物の収集がクールダウンで止まるのを避ける）
