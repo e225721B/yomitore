@@ -26,7 +26,7 @@ export const CATEGORIES: CategoryMeta[] = [
     description: "",
     listHeading: "登録した興味分野",
     feedHeading: "興味分野のトレンド新着",
-    showTrend: true,
+    showTrend: false,
   },
   {
     key: "FINISHED",
