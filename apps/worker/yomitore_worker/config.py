@@ -20,6 +20,7 @@ class Config:
 
 def load_config() -> Config:
     return Config(
+        interest_query_suffix=os.environ.get("INTEREST_QUERY_SUFFIX", "おすすめ本"),
         database_url=os.environ["DATABASE_URL"],
         youtube_api_key=os.environ.get("YOUTUBE_API_KEY") or None,
         sqs_queue_name=os.environ.get("SQS_QUEUE_NAME", "collection-queue"),

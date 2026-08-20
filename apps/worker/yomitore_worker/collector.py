@@ -87,6 +87,9 @@ def run(config: Config, mock: bool = False, force: bool = False) -> dict:
     for item in due_items:
         if stats["quota_exceeded"]:
             break
+        #  item.title が、そのまま YouTube の検索語になる
+        query = f"{item.title} {config.interest_query_suffix}" if item.type == "INTEREST" else item.title
+
         if not collect(item.title, db.category_of(item.type, item.book_status), topic=None):
             continue
         # mock はクォータを使わないので、収集済みの印は付けない
